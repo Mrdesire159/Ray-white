@@ -1,0 +1,6 @@
+{
+  "name": "Ray White Real Estate",
+  "description": "Discover premier residential properties for sale and rent with Ray White. Search houses, apartments, book property appraisals, and connect with local real estate agents.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

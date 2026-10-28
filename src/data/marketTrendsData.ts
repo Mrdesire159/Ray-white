@@ -1,0 +1,455 @@
+export interface RegionData {
+  id: string;
+  name: string;
+  state: string;
+  medianHousePrice: number;
+  medianUnitPrice: number;
+  annualHouseGrowth: number; // percentage, e.g. 8.6
+  annualUnitGrowth: number;
+  medianRentHouseWeekly: number;
+  medianRentUnitWeekly: number;
+  houseRentalYield: number; // percentage, e.g. 3.4
+  unitRentalYield: number; // percentage, e.g. 5.1
+  auctionClearanceRate: number; // percentage, e.g. 76.5
+  avgDaysOnMarket: number;
+  vacancyRate: number; // percentage, e.g. 1.2
+  buyerDemandIndex: number; // 0-100 score
+  summary: string;
+  priceHistory: {
+    year: string;
+    houses: number; // in thousands e.g. 1820 = $1,820,000
+    units: number;
+    benchmark: number;
+  }[];
+  monthlyGrowthTrend: {
+    month: string;
+    growth: number; // %
+    volume: number; // sales count
+  }[];
+  propertyTypeDemand: {
+    type: string;
+    demandScore: number; // 0-100
+    clearanceRate: number; // %
+    avgDaysOnMarket: number;
+    priceGrowthYoY: number; // %
+    medianPriceDisplay: string;
+  }[];
+}
+
+export const REGIONS_MARKET_DATA: RegionData[] = [
+  {
+    id: 'sydney',
+    name: 'Greater Sydney & Eastern Beaches',
+    state: 'NSW',
+    medianHousePrice: 1845000,
+    medianUnitPrice: 875000,
+    annualHouseGrowth: 9.2,
+    annualUnitGrowth: 6.4,
+    medianRentHouseWeekly: 1150,
+    medianRentUnitWeekly: 740,
+    houseRentalYield: 3.2,
+    unitRentalYield: 4.8,
+    auctionClearanceRate: 74.8,
+    avgDaysOnMarket: 23,
+    vacancyRate: 1.1,
+    buyerDemandIndex: 94,
+    summary:
+      'Eastern suburbs prestige waterfronts and inner-harbour estates continue setting record auction prices with acute supply constraints and sustained international buyer demand.',
+    priceHistory: [
+      { year: '2020', houses: 1320, units: 740, benchmark: 1100 },
+      { year: '2021', houses: 1540, units: 790, benchmark: 1250 },
+      { year: '2022', houses: 1610, units: 810, benchmark: 1310 },
+      { year: '2023', houses: 1690, units: 825, benchmark: 1390 },
+      { year: '2024', houses: 1770, units: 850, benchmark: 1470 },
+      { year: '2025', houses: 1845, units: 875, benchmark: 1540 },
+    ],
+    monthlyGrowthTrend: [
+      { month: 'May', growth: 0.7, volume: 1420 },
+      { month: 'Jun', growth: 0.8, volume: 1380 },
+      { month: 'Jul', growth: 0.6, volume: 1290 },
+      { month: 'Aug', growth: 0.9, volume: 1560 },
+      { month: 'Sep', growth: 1.1, volume: 1680 },
+      { month: 'Oct', growth: 0.8, volume: 1720 },
+      { month: 'Nov', growth: 1.0, volume: 1810 },
+      { month: 'Dec', growth: 0.5, volume: 1150 },
+      { month: 'Jan', growth: 0.7, volume: 1200 },
+      { month: 'Feb', growth: 0.9, volume: 1640 },
+      { month: 'Mar', growth: 1.2, volume: 1890 },
+      { month: 'Apr', growth: 0.9, volume: 1760 },
+    ],
+    propertyTypeDemand: [
+      {
+        type: 'Detached Luxury Houses',
+        demandScore: 96,
+        clearanceRate: 79.2,
+        avgDaysOnMarket: 19,
+        priceGrowthYoY: 10.4,
+        medianPriceDisplay: '$2,450,000',
+      },
+      {
+        type: 'Waterfront & Harbour Estates',
+        demandScore: 98,
+        clearanceRate: 84.1,
+        avgDaysOnMarket: 16,
+        priceGrowthYoY: 12.8,
+        medianPriceDisplay: '$5,800,000',
+      },
+      {
+        type: 'Luxury Penthouses',
+        demandScore: 91,
+        clearanceRate: 75.6,
+        avgDaysOnMarket: 24,
+        priceGrowthYoY: 8.9,
+        medianPriceDisplay: '$3,200,000',
+      },
+      {
+        type: 'Boutique Townhouses',
+        demandScore: 88,
+        clearanceRate: 73.0,
+        avgDaysOnMarket: 22,
+        priceGrowthYoY: 7.5,
+        medianPriceDisplay: '$1,680,000',
+      },
+      {
+        type: 'Urban Apartments',
+        demandScore: 82,
+        clearanceRate: 70.4,
+        avgDaysOnMarket: 28,
+        priceGrowthYoY: 5.9,
+        medianPriceDisplay: '$875,000',
+      },
+    ],
+  },
+  {
+    id: 'melbourne',
+    name: 'Melbourne & Mornington Peninsula',
+    state: 'VIC',
+    medianHousePrice: 1180000,
+    medianUnitPrice: 640000,
+    annualHouseGrowth: 5.8,
+    annualUnitGrowth: 4.2,
+    medianRentHouseWeekly: 780,
+    medianRentUnitWeekly: 580,
+    houseRentalYield: 3.8,
+    unitRentalYield: 5.2,
+    auctionClearanceRate: 71.4,
+    avgDaysOnMarket: 27,
+    vacancyRate: 1.4,
+    buyerDemandIndex: 86,
+    summary:
+      'Inner-bayside estates and Toorak/Brighton heritage homes attract competitive local owner-occupiers, while Mornington lifestyle acreage sees steady long-term appreciation.',
+    priceHistory: [
+      { year: '2020', houses: 960, units: 580, benchmark: 1100 },
+      { year: '2021', houses: 1090, units: 610, benchmark: 1250 },
+      { year: '2022', houses: 1110, units: 615, benchmark: 1310 },
+      { year: '2023', houses: 1120, units: 620, benchmark: 1390 },
+      { year: '2024', houses: 1145, units: 630, benchmark: 1470 },
+      { year: '2025', houses: 1180, units: 640, benchmark: 1540 },
+    ],
+    monthlyGrowthTrend: [
+      { month: 'May', growth: 0.4, volume: 1150 },
+      { month: 'Jun', growth: 0.5, volume: 1080 },
+      { month: 'Jul', growth: 0.3, volume: 990 },
+      { month: 'Aug', growth: 0.6, volume: 1240 },
+      { month: 'Sep', growth: 0.7, volume: 1390 },
+      { month: 'Oct', growth: 0.6, volume: 1420 },
+      { month: 'Nov', growth: 0.8, volume: 1530 },
+      { month: 'Dec', growth: 0.3, volume: 920 },
+      { month: 'Jan', growth: 0.5, volume: 960 },
+      { month: 'Feb', growth: 0.7, volume: 1310 },
+      { month: 'Mar', growth: 0.9, volume: 1580 },
+      { month: 'Apr', growth: 0.6, volume: 1420 },
+    ],
+    propertyTypeDemand: [
+      {
+        type: 'Detached Luxury Houses',
+        demandScore: 89,
+        clearanceRate: 74.0,
+        avgDaysOnMarket: 23,
+        priceGrowthYoY: 6.8,
+        medianPriceDisplay: '$1,920,000',
+      },
+      {
+        type: 'Waterfront & Harbour Estates',
+        demandScore: 92,
+        clearanceRate: 78.5,
+        avgDaysOnMarket: 21,
+        priceGrowthYoY: 8.2,
+        medianPriceDisplay: '$3,950,000',
+      },
+      {
+        type: 'Luxury Penthouses',
+        demandScore: 85,
+        clearanceRate: 69.8,
+        avgDaysOnMarket: 29,
+        priceGrowthYoY: 5.4,
+        medianPriceDisplay: '$2,150,000',
+      },
+      {
+        type: 'Boutique Townhouses',
+        demandScore: 87,
+        clearanceRate: 72.1,
+        avgDaysOnMarket: 24,
+        priceGrowthYoY: 6.1,
+        medianPriceDisplay: '$1,240,000',
+      },
+      {
+        type: 'Urban Apartments',
+        demandScore: 78,
+        clearanceRate: 65.3,
+        avgDaysOnMarket: 33,
+        priceGrowthYoY: 4.2,
+        medianPriceDisplay: '$640,000',
+      },
+    ],
+  },
+  {
+    id: 'queensland',
+    name: 'Brisbane & Gold Coast',
+    state: 'QLD',
+    medianHousePrice: 1040000,
+    medianUnitPrice: 620000,
+    annualHouseGrowth: 14.1,
+    annualUnitGrowth: 11.5,
+    medianRentHouseWeekly: 850,
+    medianRentUnitWeekly: 680,
+    houseRentalYield: 4.4,
+    unitRentalYield: 5.9,
+    auctionClearanceRate: 78.2,
+    avgDaysOnMarket: 18,
+    vacancyRate: 0.9,
+    buyerDemandIndex: 97,
+    summary:
+      'Booming migration from southern states, 2032 Olympic infrastructure acceleration, and pristine coastal lifestyles fuel Australasia’s highest annual capital gains and tightest rental yields.',
+    priceHistory: [
+      { year: '2020', houses: 650, units: 420, benchmark: 1100 },
+      { year: '2021', houses: 770, units: 470, benchmark: 1250 },
+      { year: '2022', houses: 860, units: 510, benchmark: 1310 },
+      { year: '2023', houses: 920, units: 550, benchmark: 1390 },
+      { year: '2024', houses: 980, units: 580, benchmark: 1470 },
+      { year: '2025', houses: 1040, units: 620, benchmark: 1540 },
+    ],
+    monthlyGrowthTrend: [
+      { month: 'May', growth: 1.2, volume: 1320 },
+      { month: 'Jun', growth: 1.4, volume: 1280 },
+      { month: 'Jul', growth: 1.1, volume: 1210 },
+      { month: 'Aug', growth: 1.5, volume: 1450 },
+      { month: 'Sep', growth: 1.6, volume: 1560 },
+      { month: 'Oct', growth: 1.3, volume: 1590 },
+      { month: 'Nov', growth: 1.7, volume: 1670 },
+      { month: 'Dec', growth: 0.9, volume: 1100 },
+      { month: 'Jan', growth: 1.1, volume: 1180 },
+      { month: 'Feb', growth: 1.5, volume: 1520 },
+      { month: 'Mar', growth: 1.8, volume: 1740 },
+      { month: 'Apr', growth: 1.4, volume: 1610 },
+    ],
+    propertyTypeDemand: [
+      {
+        type: 'Detached Luxury Houses',
+        demandScore: 98,
+        clearanceRate: 83.5,
+        avgDaysOnMarket: 15,
+        priceGrowthYoY: 15.2,
+        medianPriceDisplay: '$1,650,000',
+      },
+      {
+        type: 'Waterfront & Harbour Estates',
+        demandScore: 99,
+        clearanceRate: 88.0,
+        avgDaysOnMarket: 14,
+        priceGrowthYoY: 17.6,
+        medianPriceDisplay: '$4,250,000',
+      },
+      {
+        type: 'Luxury Penthouses',
+        demandScore: 94,
+        clearanceRate: 79.4,
+        avgDaysOnMarket: 20,
+        priceGrowthYoY: 13.8,
+        medianPriceDisplay: '$2,750,000',
+      },
+      {
+        type: 'Boutique Townhouses',
+        demandScore: 93,
+        clearanceRate: 77.8,
+        avgDaysOnMarket: 18,
+        priceGrowthYoY: 12.1,
+        medianPriceDisplay: '$980,000',
+      },
+      {
+        type: 'Urban Apartments',
+        demandScore: 90,
+        clearanceRate: 74.2,
+        avgDaysOnMarket: 21,
+        priceGrowthYoY: 11.5,
+        medianPriceDisplay: '$620,000',
+      },
+    ],
+  },
+  {
+    id: 'perth',
+    name: 'Perth Metropolitan & Coast',
+    state: 'WA',
+    medianHousePrice: 790000,
+    medianUnitPrice: 495000,
+    annualHouseGrowth: 16.8,
+    annualUnitGrowth: 13.2,
+    medianRentHouseWeekly: 720,
+    medianRentUnitWeekly: 570,
+    houseRentalYield: 4.9,
+    unitRentalYield: 6.3,
+    auctionClearanceRate: 81.0,
+    avgDaysOnMarket: 14,
+    vacancyRate: 0.7,
+    buyerDemandIndex: 99,
+    summary:
+      'Remarkable resource economy vigor and extreme housing supply shortages produce lightning-fast turnaround times (sub-15 days) and Australia’s highest gross rental yields.',
+    priceHistory: [
+      { year: '2020', houses: 490, units: 360, benchmark: 1100 },
+      { year: '2021', houses: 535, units: 390, benchmark: 1250 },
+      { year: '2022', houses: 580, units: 410, benchmark: 1310 },
+      { year: '2023', houses: 650, units: 440, benchmark: 1390 },
+      { year: '2024', houses: 720, units: 470, benchmark: 1470 },
+      { year: '2025', houses: 790, units: 495, benchmark: 1540 },
+    ],
+    monthlyGrowthTrend: [
+      { month: 'May', growth: 1.5, volume: 980 },
+      { month: 'Jun', growth: 1.6, volume: 940 },
+      { month: 'Jul', growth: 1.4, volume: 910 },
+      { month: 'Aug', growth: 1.7, volume: 1040 },
+      { month: 'Sep', growth: 1.9, volume: 1120 },
+      { month: 'Oct', growth: 1.6, volume: 1150 },
+      { month: 'Nov', growth: 1.8, volume: 1210 },
+      { month: 'Dec', growth: 1.1, volume: 840 },
+      { month: 'Jan', growth: 1.3, volume: 890 },
+      { month: 'Feb', growth: 1.7, volume: 1100 },
+      { month: 'Mar', growth: 2.1, volume: 1280 },
+      { month: 'Apr', growth: 1.8, volume: 1190 },
+    ],
+    propertyTypeDemand: [
+      {
+        type: 'Detached Luxury Houses',
+        demandScore: 99,
+        clearanceRate: 86.4,
+        avgDaysOnMarket: 12,
+        priceGrowthYoY: 18.2,
+        medianPriceDisplay: '$1,420,000',
+      },
+      {
+        type: 'Waterfront & Harbour Estates',
+        demandScore: 97,
+        clearanceRate: 83.0,
+        avgDaysOnMarket: 16,
+        priceGrowthYoY: 16.5,
+        medianPriceDisplay: '$3,100,000',
+      },
+      {
+        type: 'Luxury Penthouses',
+        demandScore: 90,
+        clearanceRate: 77.2,
+        avgDaysOnMarket: 22,
+        priceGrowthYoY: 12.0,
+        medianPriceDisplay: '$1,950,000',
+      },
+      {
+        type: 'Boutique Townhouses',
+        demandScore: 95,
+        clearanceRate: 81.3,
+        avgDaysOnMarket: 15,
+        priceGrowthYoY: 14.5,
+        medianPriceDisplay: '$840,000',
+      },
+      {
+        type: 'Urban Apartments',
+        demandScore: 92,
+        clearanceRate: 76.8,
+        avgDaysOnMarket: 19,
+        priceGrowthYoY: 13.2,
+        medianPriceDisplay: '$495,000',
+      },
+    ],
+  },
+  {
+    id: 'adelaide',
+    name: 'Adelaide & Hills',
+    state: 'SA',
+    medianHousePrice: 830000,
+    medianUnitPrice: 510000,
+    annualHouseGrowth: 12.3,
+    annualUnitGrowth: 9.8,
+    medianRentHouseWeekly: 650,
+    medianRentUnitWeekly: 490,
+    houseRentalYield: 4.1,
+    unitRentalYield: 5.4,
+    auctionClearanceRate: 77.0,
+    avgDaysOnMarket: 20,
+    vacancyRate: 0.8,
+    buyerDemandIndex: 93,
+    summary:
+      'Sustained affordability advantage and low stock turnover keep Adelaide one of the steadiest compounding capital markets with high auction success rates in eastern blue-chip suburbs.',
+    priceHistory: [
+      { year: '2020', houses: 510, units: 350, benchmark: 1100 },
+      { year: '2021', houses: 590, units: 380, benchmark: 1250 },
+      { year: '2022', houses: 670, units: 420, benchmark: 1310 },
+      { year: '2023', houses: 720, units: 450, benchmark: 1390 },
+      { year: '2024', houses: 775, units: 480, benchmark: 1470 },
+      { year: '2025', houses: 830, units: 510, benchmark: 1540 },
+    ],
+    monthlyGrowthTrend: [
+      { month: 'May', growth: 1.0, volume: 760 },
+      { month: 'Jun', growth: 1.1, volume: 720 },
+      { month: 'Jul', growth: 0.9, volume: 690 },
+      { month: 'Aug', growth: 1.2, volume: 810 },
+      { month: 'Sep', growth: 1.3, volume: 880 },
+      { month: 'Oct', growth: 1.1, volume: 900 },
+      { month: 'Nov', growth: 1.4, volume: 940 },
+      { month: 'Dec', growth: 0.7, volume: 630 },
+      { month: 'Jan', growth: 0.9, volume: 670 },
+      { month: 'Feb', growth: 1.2, volume: 840 },
+      { month: 'Mar', growth: 1.5, volume: 980 },
+      { month: 'Apr', growth: 1.1, volume: 890 },
+    ],
+    propertyTypeDemand: [
+      {
+        type: 'Detached Luxury Houses',
+        demandScore: 94,
+        clearanceRate: 80.2,
+        avgDaysOnMarket: 18,
+        priceGrowthYoY: 13.5,
+        medianPriceDisplay: '$1,380,000',
+      },
+      {
+        type: 'Waterfront & Harbour Estates',
+        demandScore: 90,
+        clearanceRate: 75.0,
+        avgDaysOnMarket: 24,
+        priceGrowthYoY: 11.2,
+        medianPriceDisplay: '$2,600,000',
+      },
+      {
+        type: 'Luxury Penthouses',
+        demandScore: 86,
+        clearanceRate: 71.4,
+        avgDaysOnMarket: 26,
+        priceGrowthYoY: 8.8,
+        medianPriceDisplay: '$1,750,000',
+      },
+      {
+        type: 'Boutique Townhouses',
+        demandScore: 91,
+        clearanceRate: 76.5,
+        avgDaysOnMarket: 19,
+        priceGrowthYoY: 10.9,
+        medianPriceDisplay: '$780,000',
+      },
+      {
+        type: 'Urban Apartments',
+        demandScore: 85,
+        clearanceRate: 69.8,
+        avgDaysOnMarket: 25,
+        priceGrowthYoY: 9.8,
+        medianPriceDisplay: '$510,000',
+      },
+    ],
+  },
+];
