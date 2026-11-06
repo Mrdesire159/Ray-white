@@ -57,6 +57,7 @@ export interface AuditLogEntry {
 }
 
 export interface RequestReply {
+  direction?: 'staff' | 'visitor';
   id: string;
   senderEmail: string; // e.g. "contact@raywhiterealestate.com"
   senderName: string; // e.g. "Ray White Concierge"

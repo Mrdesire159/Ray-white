@@ -417,14 +417,14 @@ export const VillaCinematicDisplay: React.FC<VillaCinematicDisplayProps> = ({
             {/* Twilight pool illumination overlay when in twilight mode */}
             {atmosphere === 'twilight' && (
               <div
-                className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 transition-opacity duration-700 bg-[radial-gradient(circle_at_60%_80%,rgba(56,189,248,0.5)_0%,transparent_50%)]"
+                className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 transition-opacity duration-700 bg-[radial-gradient(circle_at_60%_80%,rgba(165,165,165,0.5)_0%,transparent_50%)]"
               />
             )}
 
             {/* Sunset golden-hour sun flare overlay */}
             {atmosphere === 'sunset' && (
               <div
-                className="absolute inset-0 pointer-events-none mix-blend-screen opacity-50 transition-opacity duration-700 bg-[radial-gradient(circle_at_80%_20%,rgba(251,146,60,0.45)_0%,transparent_60%)]"
+                className="absolute inset-0 pointer-events-none mix-blend-screen opacity-50 transition-opacity duration-700 bg-[radial-gradient(circle_at_80%_20%,rgba(162,162,162,0.45)_0%,transparent_60%)]"
               />
             )}
           </div>

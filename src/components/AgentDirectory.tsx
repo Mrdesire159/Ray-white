@@ -89,12 +89,12 @@ export const AgentDirectory: React.FC<AgentDirectoryProps> = ({
     }
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName || !clientPhone || !selectedAgentForContact) return;
 
     // Direct inquiry dispatched into the site's Reply Portal / RequestContext
-    addRequest({
+    const requestId = await addRequest({
       type: 'contact',
       priority: 'high',
       targetEmail: selectedAgentForContact.email || targetCustomEmail,
@@ -112,6 +112,7 @@ export const AgentDirectory: React.FC<AgentDirectoryProps> = ({
         preferredOffice: selectedAgentForContact.office,
       },
     });
+    if (!requestId) return;
 
     setContactSent(true);
   };

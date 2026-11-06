@@ -59,13 +59,13 @@ export const AustraliaMapPricePins: React.FC<AustraliaMapPricePinsProps> = ({
         >
           <defs>
             <linearGradient id="ausGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1e293b" />
-              <stop offset="50%" stopColor="#0f172a" />
-              <stop offset="100%" stopColor="#1e1e24" />
+              <stop offset="0%" stopColor="#282828" />
+              <stop offset="50%" stopColor="#171717" />
+              <stop offset="100%" stopColor="#1e1e1e" />
             </linearGradient>
             <linearGradient id="coastGlow" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FFD200" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#a5a5a5" stopOpacity="0.2" />
             </linearGradient>
           </defs>
 
@@ -103,19 +103,19 @@ export const AustraliaMapPricePins: React.FC<AustraliaMapPricePinsProps> = ({
           />
 
           {/* State / Region subtle demarcation text */}
-          <text x="180" y="320" fill="#475569" fontSize="16" fontWeight="bold" letterSpacing="3">WESTERN AUSTRALIA</text>
-          <text x="470" y="240" fill="#475569" fontSize="15" fontWeight="bold" letterSpacing="3">NORTHERN TERRITORY</text>
-          <text x="700" y="260" fill="#475569" fontSize="16" fontWeight="bold" letterSpacing="3">QUEENSLAND</text>
-          <text x="470" y="420" fill="#475569" fontSize="15" fontWeight="bold" letterSpacing="3">SOUTH AUSTRALIA</text>
-          <text x="730" y="440" fill="#475569" fontSize="16" fontWeight="bold" letterSpacing="3">NEW SOUTH WALES</text>
-          <text x="700" y="520" fill="#475569" fontSize="14" fontWeight="bold" letterSpacing="2">VICTORIA</text>
-          <text x="840" y="615" fill="#475569" fontSize="12" fontWeight="bold">TAS</text>
+          <text x="180" y="320" fill="#535353" fontSize="16" fontWeight="bold" letterSpacing="3">WESTERN AUSTRALIA</text>
+          <text x="470" y="240" fill="#535353" fontSize="15" fontWeight="bold" letterSpacing="3">NORTHERN TERRITORY</text>
+          <text x="700" y="260" fill="#535353" fontSize="16" fontWeight="bold" letterSpacing="3">QUEENSLAND</text>
+          <text x="470" y="420" fill="#535353" fontSize="15" fontWeight="bold" letterSpacing="3">SOUTH AUSTRALIA</text>
+          <text x="730" y="440" fill="#535353" fontSize="16" fontWeight="bold" letterSpacing="3">NEW SOUTH WALES</text>
+          <text x="700" y="520" fill="#535353" fontSize="14" fontWeight="bold" letterSpacing="2">VICTORIA</text>
+          <text x="840" y="615" fill="#535353" fontSize="12" fontWeight="bold">TAS</text>
 
           {/* Oceans subtle watermarks */}
-          <text x="70" y="190" fill="#334155" fontSize="13" fontStyle="italic">Indian Ocean</text>
-          <text x="830" y="190" fill="#334155" fontSize="13" fontStyle="italic">Coral Sea</text>
-          <text x="860" y="520" fill="#334155" fontSize="13" fontStyle="italic">Pacific Ocean</text>
-          <text x="440" y="585" fill="#334155" fontSize="13" fontStyle="italic">Southern Ocean</text>
+          <text x="70" y="190" fill="#3f3f3f" fontSize="13" fontStyle="italic">Indian Ocean</text>
+          <text x="830" y="190" fill="#3f3f3f" fontSize="13" fontStyle="italic">Coral Sea</text>
+          <text x="860" y="520" fill="#3f3f3f" fontSize="13" fontStyle="italic">Pacific Ocean</text>
+          <text x="440" y="585" fill="#3f3f3f" fontSize="13" fontStyle="italic">Southern Ocean</text>
         </svg>
 
         {/* Floating Price Tag Pins Rendered Over Coordinates */}

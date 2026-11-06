@@ -75,7 +75,7 @@ export default function App() {
   const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<
     'home' | 'listings' | 'pricelist' | 'book' | 'rollingball' | 'trends' | 'videos' | 'sell' | 'agents' | 'contact' | 'admin' | 'villatour' | 'replyportal' | 'airbnb'
-  >('home');
+  >(() => window.location.pathname.replace(/\/$/, '') === '/admin' ? 'admin' : 'home');
   const [heroMode, setHeroMode] = useState<'cinematic' | 'rollingball'>('cinematic');
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -305,7 +305,7 @@ export default function App() {
   }, [syncedProperties]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F9FA] text-[#22252A]">
+    <div className="min-h-screen flex flex-col bg-[#f9f9f9] text-[#22252A]">
       {/* Real-time Price Reduction & Equality Control Bar */}
       <RealtimePriceBar />
 
@@ -899,7 +899,7 @@ export default function App() {
           <AustraliaAirbnbExplorer onOpenInbox={() => handleNavigate('replyportal')} />
         )}
 
-        {/* VIEW: ADMIN PORTAL (PROTECTED BY PASSCODE 000333999) */}
+        {/* VIEW: PRIVATE ADMIN PORTAL */}
         {currentView === 'admin' && (
           isAdminAuthenticated ? (
             <AdminPortal
@@ -990,7 +990,7 @@ export default function App() {
         onCloseExternal={() => setIsChatOpen(false)}
       />
 
-      {/* Admin Passcode Modal (Password: 000333999) */}
+      {/* Staff access modal */}
       <AdminPasswordModal
         isOpen={isAdminPasswordModalOpen}
         onClose={() => setIsAdminPasswordModalOpen(false)}

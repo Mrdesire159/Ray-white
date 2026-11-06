@@ -316,8 +316,8 @@ export const RollingBallDisplay: React.FC<RollingBallDisplayProps> = ({
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Atmospheric Glowing Ball Horizon Rings */}
-          <div className="absolute w-[520px] h-[520px] rounded-full border border-cyan-500/20 pointer-events-none shadow-[0_0_60px_rgba(6,182,212,0.12)]" />
-          <div className="absolute w-[440px] h-[440px] rounded-full border border-amber-400/25 pointer-events-none shadow-[0_0_80px_rgba(251,191,36,0.15)]" />
+          <div className="absolute w-[520px] h-[520px] rounded-full border border-cyan-500/20 pointer-events-none shadow-[0_0_60px_rgba(147,147,147,0.12)]" />
+          <div className="absolute w-[440px] h-[440px] rounded-full border border-amber-400/25 pointer-events-none shadow-[0_0_80px_rgba(193,193,193,0.15)]" />
           <div className="absolute w-[360px] h-[360px] rounded-full border border-dashed border-purple-400/30 pointer-events-none animate-[spin_60s_linear_infinite]" />
           <div className="absolute w-[220px] h-[220px] rounded-full border border-emerald-400/25 pointer-events-none" />
 
@@ -334,7 +334,7 @@ export const RollingBallDisplay: React.FC<RollingBallDisplayProps> = ({
           >
             {/* Equator Guide Ring on the Ball */}
             <div
-              className="absolute -translate-x-1/2 -translate-y-1/2 w-[660px] h-[660px] rounded-full border-2 border-amber-400/35 pointer-events-none shadow-[0_0_30px_rgba(251,191,36,0.25)]"
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-[660px] h-[660px] rounded-full border-2 border-amber-400/35 pointer-events-none shadow-[0_0_30px_rgba(193,193,193,0.25)]"
               style={{
                 transform: 'rotateX(90deg)',
                 transformStyle: 'preserve-3d',
@@ -379,7 +379,7 @@ export const RollingBallDisplay: React.FC<RollingBallDisplayProps> = ({
                   <div
                     className={`w-36 sm:w-40 p-2.5 rounded-2xl backdrop-blur-md transition-all duration-300 border ${
                       isSelected
-                        ? 'bg-slate-900/95 text-white border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.6)] scale-110 z-30 ring-2 ring-amber-400'
+                        ? 'bg-slate-900/95 text-white border-amber-400 shadow-[0_0_30px_rgba(193,193,193,0.6)] scale-110 z-30 ring-2 ring-amber-400'
                         : isSale
                         ? 'bg-slate-900/85 hover:bg-slate-900 text-neutral-200 border-emerald-500/40 hover:border-emerald-400 opacity-90 hover:opacity-100 hover:scale-105'
                         : 'bg-slate-900/85 hover:bg-slate-900 text-neutral-200 border-blue-500/40 hover:border-blue-400 opacity-90 hover:opacity-100 hover:scale-105'

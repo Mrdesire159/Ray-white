@@ -7,7 +7,7 @@ interface VisitorNotificationToastProps {
 }
 
 export const VisitorNotificationToast: React.FC<VisitorNotificationToastProps> = ({ onOpenInbox }) => {
-  const { latestVisitorNotification, dismissVisitorNotification, markReplyAsRead } = useRequests();
+  const { latestVisitorNotification, dismissVisitorNotification, selectInboxRequest } = useRequests();
 
   // Auto-dismiss after 12 seconds if not clicked
   useEffect(() => {
@@ -21,7 +21,7 @@ export const VisitorNotificationToast: React.FC<VisitorNotificationToastProps> =
   if (!latestVisitorNotification) return null;
 
   const handleOpen = () => {
-    markReplyAsRead(latestVisitorNotification.replyId);
+    selectInboxRequest(latestVisitorNotification.requestId);
     dismissVisitorNotification();
     onOpenInbox();
   };
@@ -30,7 +30,7 @@ export const VisitorNotificationToast: React.FC<VisitorNotificationToastProps> =
     <div
       role="alert"
       aria-live="polite"
-      className="fixed bottom-6 right-4 sm:right-6 sm:bottom-6 z-50 max-w-md w-full animate-in fade-in slide-in-from-bottom-5 duration-300"
+      className="fixed bottom-6 right-4 sm:right-6 sm:bottom-6 z-50 max-w-md w-[calc(100%-2rem)] animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       <div className="bg-neutral-950/95 backdrop-blur-md text-white rounded-2xl p-4 sm:p-5 shadow-2xl border-2 border-blue-500/80 ring-4 ring-blue-500/20 relative overflow-hidden">
         {/* Top gold accent line */}

@@ -63,7 +63,7 @@ export const AirbnbStayModal: React.FC<AirbnbStayModalProps> = ({
   const basePrice = stay.pricePerNight * nights;
   const totalPrice = basePrice + stay.cleaningFee + stay.serviceFee;
 
-  const handleBookingSubmit = (e: React.FormEvent) => {
+  const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim() || !clientEmail.trim() || isSubmitting) return;
 
@@ -77,7 +77,7 @@ Estimated Total: $${totalPrice.toLocaleString()} AUD
 Client Notes: ${clientNote.trim() || 'No special requests.'}`;
 
     // Add to shared requests pipeline routed to contact@raywhiterealestate.com
-    addRequest({
+    const requestId = await addRequest({
       type: 'contact',
       priority: 'high',
       propertyTitle: stay.title,
@@ -100,6 +100,7 @@ Client Notes: ${clientNote.trim() || 'No special requests.'}`;
         offerAmount: totalPrice,
       },
     });
+    if (!requestId)  { setIsSubmitting(false); return; }
 
     setTimeout(() => {
       setIsSubmitting(false);

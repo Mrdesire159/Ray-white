@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenChat,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { pendingCount, isAdminAuthenticated, unrepliedCount, visitorUnreadReplyCount, targetCustomEmail } = useRequests();
+  const { visitor, openAccount, pendingCount, isAdminAuthenticated, unrepliedCount, visitorUnreadReplyCount, targetCustomEmail } = useRequests();
 
   const navItems = [
     { id: 'home', label: 'Home' },
@@ -133,6 +133,8 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               ) : null}
             </button>
+
+            <button onClick={() => visitor ? handleNavClick('replyportal') : openAccount()} className="px-2 py-2 text-xs font-bold rounded-lg hover:bg-neutral-100" aria-label={visitor ? 'Your visitor account' : 'Sign in or create an account'}>{visitor ? 'Account' : 'Sign in'}</button>
 
             {/* Admin Portal Button - Hidden from public, only visible when staff is authenticated */}
             {isAdminAuthenticated && (

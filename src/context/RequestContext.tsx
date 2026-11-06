@@ -1,8 +1,36 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AdminRequest, RequestPriority, RequestStatus, RequestType, RequestReply } from '../types/request';
-import { INITIAL_REQUESTS } from '../data/mockRequests';
-import { AGENTS, getAgentById } from '../data/agents';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  getUser,
+  handleAuthCallback,
+  onAuthChange,
+  logout,
+  type User,
+} from "@netlify/identity";
+import { AdminRequest, RequestPriority, RequestType } from "../types/request";
+import { getAgentById } from "../data/agents";
+import { VisitorAccount } from "../components/VisitorAccount";
 
+type NewRequest = Partial<AdminRequest> & {
+  type: RequestType;
+  client: AdminRequest["client"];
+};
+type Notification = {
+  replyId: string;
+  requestId: string;
+  senderEmail: string;
+  senderName: string;
+  recipientName: string;
+  subject: string;
+  message: string;
+  sentAt: string;
+};
 interface ApprovePayload {
   decisionNote?: string;
   assignedAgentId?: string;
@@ -10,7 +38,6 @@ interface ApprovePayload {
   meetingLocation?: string;
   actorName?: string;
 }
-
 interface RequestContextType {
   requests: AdminRequest[];
   pendingCount: number;
@@ -20,27 +47,18 @@ interface RequestContextType {
   unrepliedCount: number;
   visitorUnreadReplyCount: number;
   readReplyIds: string[];
-  markReplyAsRead: (replyId: string) => void;
+  markReplyAsRead: (id: string) => void;
   markAllRepliesAsRead: () => void;
-  latestVisitorNotification: {
-    replyId: string;
-    requestId: string;
-    senderEmail: string;
-    senderName: string;
-    recipientName: string;
-    subject: string;
-    message: string;
-    sentAt: string;
-  } | null;
+  latestVisitorNotification: Notification | null;
   dismissVisitorNotification: () => void;
   targetCustomEmail: string;
   totalVolumeEstimate: number;
-  addRequest: (newReq: Partial<AdminRequest> & { type: RequestType; client: AdminRequest['client'] }) => string;
+  addRequest: (data: NewRequest) => Promise<string | null>;
   sendReply: (
-    requestId: string,
-    replyText: string,
-    options?: { senderName?: string; senderEmail?: string; subject?: string }
-  ) => void;
+    id: string,
+    message: string,
+    options?: { senderName?: string; senderEmail?: string; subject?: string },
+  ) => Promise<boolean>;
   sendDirectMessage: (data: {
     recipientName: string;
     recipientEmail: string;
@@ -48,638 +66,374 @@ interface RequestContextType {
     subject: string;
     message: string;
     propertyAddress?: string;
-  }) => string;
+  }) => Promise<string | null>;
   approveRequest: (id: string, payload?: ApprovePayload) => void;
-  declineRequest: (id: string, reason: string, note?: string, actorName?: string) => void;
+  declineRequest: (
+    id: string,
+    reason: string,
+    note?: string,
+    actorName?: string,
+  ) => void;
   completeRequest: (id: string, note?: string, actorName?: string) => void;
-  assignAgent: (requestId: string, agentId: string, actorName?: string) => void;
-  updatePriority: (requestId: string, priority: RequestPriority) => void;
-  addNote: (requestId: string, noteText: string, author?: string) => void;
+  assignAgent: (id: string, agent: string, actor?: string) => void;
+  updatePriority: (id: string, priority: RequestPriority) => void;
+  addNote: (id: string, note: string, author?: string) => void;
   deleteRequest: (id: string) => void;
-  bulkApprove: (ids: string[], actorName?: string) => void;
-  bulkDecline: (ids: string[], reason: string, actorName?: string) => void;
-  resetToDefaults: () => void;
+  bulkApprove: (ids: string[], actor?: string) => void;
+  bulkDecline: (ids: string[], reason: string, actor?: string) => void;
   isAdminAuthenticated: boolean;
-  loginAdmin: (password: string) => boolean;
+  loginAdmin: (code: string) => Promise<boolean>;
   logoutAdmin: () => void;
+  visitor: User | null;
+  openAccount: () => void;
+  logoutVisitor: () => Promise<void>;
+  inboxRequestId: string;
+  selectInboxRequest: (id: string) => void;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
 }
-
-const STORAGE_KEY = 'raywhite_admin_requests_v1';
-
 const RequestContext = createContext<RequestContextType | undefined>(undefined);
-
-export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [requests, setRequests] = useState<AdminRequest[]>(() => {
+async function api(body?: unknown) {
+  const response = await fetch("/.netlify/functions/portal", {
+    method: body ? "POST" : "GET",
+    credentials: "same-origin",
+    headers: body ? { "Content-Type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok)
+    throw new Error(
+      result.error || "Unable to reach the message service. Please try again.",
+    );
+  return result;
+}
+export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [requests, setRequests] = useState<AdminRequest[]>([]);
+  const [readReplyIds, setReadReplyIds] = useState<string[]>([]);
+  const [isAdminAuthenticated, setAdmin] = useState(false);
+  const [visitor, setVisitor] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [inboxRequestId, selectInboxRequest] = useState("");
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [callbackMode, setCallbackMode] = useState<
+    "reset" | "invite" | undefined
+  >();
+  const [inviteToken, setInviteToken] = useState<string>();
+  const [latestVisitorNotification, setNotification] =
+    useState<Notification | null>(null);
+  const dismissed = useRef(new Set<string>());
+  const generation = useRef(0);
+  const refreshing = useRef(false);
+  const refresh = useCallback(async () => {
+    if (refreshing.current) return;
+    const current = generation.current;
+    refreshing.current = true;
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+      const data = await api();
+      if (current !== generation.current) return;
+      setRequests(data.requests);
+      setReadReplyIds(data.readReplyIds);
+      setAdmin(data.isAdmin);
+      setError(null);
+      if (!data.isAdmin) {
+        const unread = data.requests.flatMap((r: AdminRequest) =>
+          (r.replies || [])
+            .filter(
+              (m) =>
+                m.direction === "staff" && !data.readReplyIds.includes(m.id),
+            )
+            .map((m) => ({ ...m, requestId: r.id })),
+        );
+        const newest = unread
+          .filter((m: any) => !dismissed.current.has(m.id))
+          .sort((a: any, b: any) => b.sentAt.localeCompare(a.sentAt))[0];
+        if (newest) {
+          dismissed.current.add(newest.id);
+          setNotification({
+            ...newest,
+            replyId: newest.id,
+            recipientName: newest.recipientName || "",
+            subject: newest.subject || "New reply",
+          });
         }
       }
     } catch (e) {
-      console.warn('Failed to parse saved requests from localStorage, loading defaults.', e);
+      if (current === generation.current) setError((e as Error).message);
+    } finally {
+      refreshing.current = false;
+      setLoading(false);
     }
-    return INITIAL_REQUESTS;
-  });
-
-  // Admin authentication state with passcode 000333999
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem('rw_admin_authenticated') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const loginAdmin = (password: string): boolean => {
-    if (password.trim() === '000333999') {
-      setIsAdminAuthenticated(true);
-      try {
-        sessionStorage.setItem('rw_admin_authenticated', 'true');
-      } catch {}
-      return true;
-    }
-    return false;
-  };
-
-  const logoutAdmin = () => {
-    setIsAdminAuthenticated(false);
-    try {
-      sessionStorage.removeItem('rw_admin_authenticated');
-    } catch {}
-  };
-
-  // Save to localStorage whenever requests change
+  }, []);
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-    } catch (e) {
-      console.warn('Failed to save requests to localStorage', e);
-    }
-  }, [requests]);
-
-  // Visitor read replies tracking in localStorage
-  const [readReplyIds, setReadReplyIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('rw_visitor_read_replies_v1');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Track latest notification toast for visitor
-  const [latestVisitorNotification, setLatestVisitorNotification] = useState<{
-    replyId: string;
-    requestId: string;
-    senderEmail: string;
-    senderName: string;
-    recipientName: string;
-    subject: string;
-    message: string;
-    sentAt: string;
-  } | null>(null);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('rw_visitor_read_replies_v1', JSON.stringify(readReplyIds));
-    } catch {}
-  }, [readReplyIds]);
-
-  const pendingCount = requests.filter((r) => r.status === 'pending').length;
-  const urgentCount = requests.filter((r) => r.status === 'pending' && r.priority === 'urgent').length;
-  const approvedCount = requests.filter((r) => r.status === 'approved').length;
-  const completedCount = requests.filter((r) => r.status === 'completed').length;
-  const unrepliedCount = requests.filter((r) => !r.replies || r.replies.length === 0).length;
-  const targetCustomEmail = 'contact@raywhiterealestate.com';
-
-  // Calculate unread replies sent to the visitor
-  const allReplies = requests.flatMap((r) => r.replies || []);
-  const visitorUnreadReplyCount = allReplies.filter((rep) => !readReplyIds.includes(rep.id)).length;
-
-  const markReplyAsRead = (replyId: string) => {
-    setReadReplyIds((prev) => (prev.includes(replyId) ? prev : [...prev, replyId]));
-  };
-
-  const markAllRepliesAsRead = () => {
-    const allIds = requests.flatMap((r) => r.replies || []).map((rep) => rep.id);
-    setReadReplyIds(allIds);
-    setLatestVisitorNotification(null);
-  };
-
-  const dismissVisitorNotification = () => {
-    setLatestVisitorNotification(null);
-  };
-
-  // Play subtle notification chime when a reply is received
-  const playNotificationChime = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.36);
-    } catch {
-      // Audio playback might be restricted before user gesture
-    }
-  };
-
-  // Calculate estimated total pipeline volume
-  const totalVolumeEstimate = requests.reduce((sum, req) => {
-    if (req.details.offerAmount) return sum + req.details.offerAmount;
-    if (req.details.estimatedValueRange?.median) return sum + req.details.estimatedValueRange.median;
-    return sum;
-  }, 0);
-
-  const addRequest = (
-    newReq: Partial<AdminRequest> & { type: RequestType; client: AdminRequest['client'] }
-  ): string => {
-    const timestamp = new Date().toISOString();
-    const nextNum = Math.floor(1000 + Math.random() * 9000);
-    const newId = `REQ-2026-${nextNum}`;
-
-    let assignedAgent = undefined;
-    if (newReq.assignedAgentId) {
-      const ag = getAgentById(newReq.assignedAgentId);
-      assignedAgent = {
-        assignedAgentId: ag.id,
-        assignedAgentName: ag.name,
-        assignedAgentEmail: ag.email,
-        assignedAgentAvatar: ag.avatar,
-      };
-    }
-
-    const created: AdminRequest = {
-      id: newId,
-      type: newReq.type,
-      status: 'pending',
-      priority: newReq.priority || 'normal',
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      client: newReq.client,
-      targetEmail: newReq.targetEmail || targetCustomEmail,
-      replies: newReq.replies || [],
-      propertyId: newReq.propertyId,
-      propertyTitle: newReq.propertyTitle,
-      propertyAddress: newReq.propertyAddress,
-      propertySuburb: newReq.propertySuburb,
-      propertyState: newReq.propertyState || 'NSW',
-      propertyPrice: newReq.propertyPrice,
-      propertyImage: newReq.propertyImage,
-      details: newReq.details || {},
-      ...assignedAgent,
-      notes: newReq.notes || [],
-      auditLog: [
-        {
-          action: 'Request Created',
-          timestamp,
-          actor: 'Website Form Submission',
-          details: `Client ${newReq.client.name} submitted a new ${newReq.type} request directed to ${targetCustomEmail}.`,
-        },
-      ],
+    let active = true;
+    const clear = () => {
+      generation.current++;
+      setRequests([]);
+      setReadReplyIds([]);
+      setNotification(null);
+      selectInboxRequest("");
+      dismissed.current.clear();
     };
-
-    setRequests((prev) => [created, ...prev]);
-    return newId;
-  };
-
-  const sendReply = (
-    requestId: string,
-    replyText: string,
-    options?: { senderName?: string; senderEmail?: string; subject?: string }
-  ) => {
-    const timestamp = new Date().toISOString();
-    const replyId = `REP-${Date.now()}`;
-    const senderEmail = options?.senderEmail || targetCustomEmail;
-    const senderName = options?.senderName || 'Ray White Concierge';
-
-    // Locate target request to extract recipient context
-    const targetReq = requests.find((r) => r.id === requestId);
-    const recipientName = targetReq?.client.name || 'Visitor';
-    const subject = options?.subject || targetReq?.details.subject || `Re: Your Inquiry with Ray White`;
-
-    // Trigger in-site notification toast for the visitor
-    setLatestVisitorNotification({
-      replyId,
-      requestId,
-      senderEmail,
-      senderName,
-      recipientName,
-      subject,
-      message: replyText,
-      sentAt: timestamp,
+    const unsubscribe = onAuthChange((_event, user) => {
+      clear();
+      setVisitor(user);
+      void refresh();
     });
-
-    // Play pleasant visitor notification chime
-    playNotificationChime();
-
-    // Trigger system browser notification if permitted
-    try {
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification(`New message from ${senderName} (${senderEmail})`, {
-          body: replyText,
-          icon: '/favicon.ico',
-        });
-      }
-    } catch {}
-
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== requestId) return req;
-
-        const newReply: RequestReply = {
-          id: replyId,
-          senderEmail,
-          senderName,
-          recipientEmail: req.client.email,
-          recipientName: req.client.name,
-          subject,
-          message: replyText,
-          sentAt: timestamp,
-        };
-
-        const currentReplies = req.replies || [];
-        const updatedReplies = [...currentReplies, newReply];
-
-        const auditEntry = {
-          action: 'Reply Sent',
-          timestamp,
-          actor: `${senderName} <${senderEmail}>`,
-          details: `Direct reply sent to ${req.client.email}: "${replyText.slice(0, 80)}${replyText.length > 80 ? '...' : ''}"`,
-        };
-
-        return {
-          ...req,
-          updatedAt: timestamp,
-          replies: updatedReplies,
-          auditLog: [auditEntry, ...req.auditLog],
-        };
-      })
-    );
-  };
-
-  const sendDirectMessage = (data: {
-    recipientName: string;
-    recipientEmail: string;
-    recipientPhone?: string;
-    subject: string;
-    message: string;
-    propertyAddress?: string;
-  }): string => {
-    const timestamp = new Date().toISOString();
-    const newId = `MSG-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const replyId = `REP-${Date.now()}`;
-
-    const newReq: AdminRequest = {
-      id: newId,
-      type: 'contact',
-      status: 'approved',
-      priority: 'normal',
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      client: {
-        name: data.recipientName,
-        email: data.recipientEmail,
-        phone: data.recipientPhone || 'Unspecified',
-        preferredContact: 'email',
-      },
-      targetEmail: targetCustomEmail,
-      propertyAddress: data.propertyAddress,
-      details: {
-        subject: data.subject,
-        message: data.message,
-      },
-      replies: [
-        {
-          id: replyId,
-          senderEmail: targetCustomEmail,
-          senderName: 'Ray White Executive Team',
-          recipientEmail: data.recipientEmail,
-          recipientName: data.recipientName,
-          subject: data.subject,
-          message: data.message,
-          sentAt: timestamp,
-        },
-      ],
-      notes: [],
-      auditLog: [
-        {
-          action: 'Direct Message Created',
-          timestamp,
-          actor: targetCustomEmail,
-          details: `Outbound direct communication initiated to ${data.recipientEmail}`,
-        },
-      ],
-    };
-
-    setRequests((prev) => [newReq, ...prev]);
-    return newId;
-  };
-
-  const approveRequest = (id: string, payload?: ApprovePayload) => {
-    const now = new Date().toISOString();
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== id) return req;
-
-        let agentDetails = {};
-        if (payload?.assignedAgentId) {
-          const ag = getAgentById(payload.assignedAgentId);
-          agentDetails = {
-            assignedAgentId: ag.id,
-            assignedAgentName: ag.name,
-            assignedAgentEmail: ag.email,
-            assignedAgentAvatar: ag.avatar,
-          };
+    (async () => {
+      try {
+        const callback = await handleAuthCallback();
+        if (callback?.type === "recovery" || callback?.type === "invite") {
+          setCallbackMode(callback.type === "recovery" ? "reset" : "invite");
+          if (callback.type === "invite") setInviteToken(callback.token);
+          setAccountOpen(true);
         }
-
-        const actor = payload?.actorName || 'Executive Admin';
-        const approvalEntry = {
-          action: 'Request Approved',
-          timestamp: now,
-          actor,
-          details: payload?.decisionNote
-            ? `Approved: ${payload.decisionNote}`
-            : 'Request approved and moved to active status.',
-        };
-
-        return {
-          ...req,
-          ...agentDetails,
-          status: 'approved',
-          updatedAt: now,
-          approvalDetails: {
-            approvedAt: now,
-            approvedBy: actor,
-            scheduledDateTime: payload?.scheduledDateTime,
-            meetingLocation: payload?.meetingLocation,
-            decisionNote: payload?.decisionNote,
-          },
-          auditLog: [approvalEntry, ...req.auditLog],
-        };
-      })
-    );
-  };
-
-  const declineRequest = (id: string, reason: string, note?: string, actorName = 'Executive Admin') => {
-    const now = new Date().toISOString();
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== id) return req;
-
-        const declineEntry = {
-          action: 'Request Declined',
-          timestamp: now,
-          actor: actorName,
-          details: `Declined reason: ${reason}. ${note ? `Note: ${note}` : ''}`,
-        };
-
-        return {
-          ...req,
-          status: 'declined',
-          updatedAt: now,
-          rejectionDetails: {
-            rejectedAt: now,
-            rejectedBy: actorName,
-            reason,
-            rejectionNote: note,
-          },
-          auditLog: [declineEntry, ...req.auditLog],
-        };
-      })
-    );
-  };
-
-  const completeRequest = (id: string, note?: string, actorName = 'Executive Admin') => {
-    const now = new Date().toISOString();
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== id) return req;
-
-        const completeEntry = {
-          action: 'Request Completed',
-          timestamp: now,
-          actor: actorName,
-          details: note || 'Request fulfilled and archived as completed.',
-        };
-
-        return {
-          ...req,
-          status: 'completed',
-          updatedAt: now,
-          auditLog: [completeEntry, ...req.auditLog],
-        };
-      })
-    );
-  };
-
-  const assignAgent = (requestId: string, agentId: string, actorName = 'Executive Admin') => {
-    const now = new Date().toISOString();
-    const agent = getAgentById(agentId);
-
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== requestId) return req;
-
-        const assignEntry = {
-          action: 'Assigned to Agent',
-          timestamp: now,
-          actor: actorName,
-          details: `Assigned to ${agent.name} (${agent.office}).`,
-        };
-
-        return {
-          ...req,
-          assignedAgentId: agent.id,
-          assignedAgentName: agent.name,
-          assignedAgentEmail: agent.email,
-          assignedAgentAvatar: agent.avatar,
-          updatedAt: now,
-          auditLog: [assignEntry, ...req.auditLog],
-        };
-      })
-    );
-  };
-
-  const updatePriority = (requestId: string, priority: RequestPriority) => {
-    const now = new Date().toISOString();
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== requestId) return req;
-        return {
-          ...req,
-          priority,
-          updatedAt: now,
-          auditLog: [
-            {
-              action: 'Priority Updated',
-              timestamp: now,
-              actor: 'Executive Admin',
-              details: `Priority changed to ${priority.toUpperCase()}.`,
-            },
-            ...req.auditLog,
-          ],
-        };
-      })
-    );
-  };
-
-  const addNote = (requestId: string, noteText: string, author = 'Executive Admin') => {
-    if (!noteText.trim()) return;
-    const now = new Date().toISOString();
-    const newNote = {
-      id: `note-${Date.now()}`,
-      author,
-      text: noteText.trim(),
-      createdAt: now,
+        const user = await getUser();
+        if (active) {
+          setVisitor(user);
+          await refresh();
+        }
+      } catch {
+        if (active) {
+          setError("Unable to process sign-in. Please try again.");
+          setLoading(false);
+        }
+      }
+    })();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void refresh();
+    }, 12000);
+    const onFocus = () => void refresh();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      active = false;
+      unsubscribe();
+      clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
     };
-
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== requestId) return req;
-        return {
-          ...req,
-          updatedAt: now,
-          notes: [newNote, ...req.notes],
-          auditLog: [
-            {
-              action: 'Note Appended',
-              timestamp: now,
-              actor: author,
-              details: `Added note: "${noteText.slice(0, 40)}${noteText.length > 40 ? '...' : ''}"`,
-            },
-            ...req.auditLog,
-          ],
-        };
-      })
-    );
-  };
-
-  const deleteRequest = (id: string) => {
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const bulkApprove = (ids: string[], actorName = 'Executive Admin') => {
-    const now = new Date().toISOString();
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (!ids.includes(req.id) || req.status === 'approved') return req;
-        return {
-          ...req,
-          status: 'approved',
-          updatedAt: now,
-          approvalDetails: {
-            approvedAt: now,
-            approvedBy: actorName,
-            decisionNote: 'Bulk approved via executive admin console.',
-          },
-          auditLog: [
-            {
-              action: 'Bulk Approved',
-              timestamp: now,
-              actor: actorName,
-              details: 'Approved in batch operation.',
-            },
-            ...req.auditLog,
-          ],
-        };
-      })
-    );
-  };
-
-  const bulkDecline = (ids: string[], reason: string, actorName = 'Executive Admin') => {
-    const now = new Date().toISOString();
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (!ids.includes(req.id) || req.status === 'declined') return req;
-        return {
-          ...req,
-          status: 'declined',
-          updatedAt: now,
-          rejectionDetails: {
-            rejectedAt: now,
-            rejectedBy: actorName,
-            reason,
-            rejectionNote: 'Bulk declined.',
-          },
-          auditLog: [
-            {
-              action: 'Bulk Declined',
-              timestamp: now,
-              actor: actorName,
-              details: `Declined in batch: ${reason}`,
-            },
-            ...req.auditLog,
-          ],
-        };
-      })
-    );
-  };
-
-  const resetToDefaults = () => {
-    setRequests(INITIAL_REQUESTS);
+  }, [refresh]);
+  async function mutate(body: object) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_REQUESTS));
+      const result = await api(body);
+      setError(null);
+      await refresh();
+      return result;
     } catch (e) {
-      console.warn('Failed to reset requests in localStorage', e);
+      setError((e as Error).message);
+      return null;
     }
+  }
+  const addRequest = async (request: NewRequest) => {
+    if (!visitor && !isAdminAuthenticated) {
+      setAccountOpen(true);
+      return null;
+    }
+    const result = await mutate({ action: "create", request });
+    return result?.id || null;
   };
-
+  const sendReply = async (id: string, message: string) =>
+    !!(await mutate({ action: "reply", id, message }));
+  const update = (id: string, patch: object) => {
+    void mutate({ action: "update", id, patch });
+  };
+  const approveRequest = (id: string, payload: ApprovePayload = {}) =>
+    update(id, {
+      status: "approved",
+      approvalDetails: {
+        approvedAt: new Date().toISOString(),
+        approvedBy: "Staff",
+        ...payload,
+      },
+    });
+  const declineRequest = (id: string, reason: string, note?: string) =>
+    update(id, {
+      status: "declined",
+      rejectionDetails: {
+        rejectedAt: new Date().toISOString(),
+        rejectedBy: "Staff",
+        reason,
+        rejectionNote: note,
+      },
+    });
+  const markReplyAsRead = useCallback(
+    (replyId: string) => {
+      const request = requests.find((r) =>
+        r.replies?.some((m) => m.id === replyId),
+      );
+      if (!request || isAdminAuthenticated) return;
+      setReadReplyIds((prev) =>
+        prev.includes(replyId) ? prev : [...prev, replyId],
+      );
+      void api({ action: "read", id: request.id, replyId }).catch((e) => {
+        setError(e.message);
+        void refresh();
+      });
+    },
+    [requests, isAdminAuthenticated, refresh],
+  );
+  const logoutAdmin = () => {
+    void (async () => {
+      const result = await mutate({ action: "admin-logout" });
+      if (result) {
+        generation.current++;
+        setAdmin(false);
+        setRequests([]);
+        await refresh();
+      }
+    })();
+  };
+  const value: RequestContextType = {
+    requests,
+    readReplyIds,
+    isAdminAuthenticated,
+    visitor,
+    loading,
+    error,
+    refresh,
+    inboxRequestId,
+    selectInboxRequest,
+    openAccount: () => setAccountOpen(true),
+    logoutVisitor: async () => {
+      generation.current++;
+      setRequests([]);
+      setReadReplyIds([]);
+      setNotification(null);
+      await logout();
+      setVisitor(null);
+      await refresh();
+    },
+    pendingCount: requests.filter((r) => r.status === "pending").length,
+    urgentCount: requests.filter(
+      (r) => r.status === "pending" && r.priority === "urgent",
+    ).length,
+    approvedCount: requests.filter((r) => r.status === "approved").length,
+    completedCount: requests.filter((r) => r.status === "completed").length,
+    unrepliedCount: requests.filter(
+      (r) =>
+        !(r.replies || []).some((m) => m.direction === "staff") ||
+        r.replies?.at(-1)?.direction === "visitor",
+    ).length,
+    visitorUnreadReplyCount: isAdminAuthenticated
+      ? 0
+      : requests
+          .flatMap((r) => r.replies || [])
+          .filter(
+            (m) => m.direction === "staff" && !readReplyIds.includes(m.id),
+          ).length,
+    markReplyAsRead,
+    markAllRepliesAsRead: () => {
+      requests.forEach((r) =>
+        r.replies
+          ?.filter(
+            (m) => m.direction === "staff" && !readReplyIds.includes(m.id),
+          )
+          .forEach((m) => markReplyAsRead(m.id)),
+      );
+      setNotification(null);
+    },
+    latestVisitorNotification,
+    dismissVisitorNotification: useCallback(() => setNotification(null), []),
+    targetCustomEmail: "contact@raywhiterealestate.com",
+    totalVolumeEstimate: requests.reduce(
+      (s, r) =>
+        s +
+        (r.details.offerAmount || r.details.estimatedValueRange?.median || 0),
+      0,
+    ),
+    addRequest,
+    sendReply,
+    sendDirectMessage: async (data) => {
+      const result = await mutate({
+        action: "direct",
+        request: {
+          type: "contact",
+          client: {
+            name: data.recipientName,
+            email: data.recipientEmail,
+            phone: data.recipientPhone,
+          },
+          details: { subject: data.subject },
+          propertyAddress: data.propertyAddress,
+        },
+        message: data.message,
+      });
+      return result?.id || null;
+    },
+    approveRequest,
+    declineRequest,
+    completeRequest: (id) => update(id, { status: "completed" }),
+    assignAgent: (id, agentId) => {
+      const agent = getAgentById(agentId);
+      update(id, {
+        assignedAgentId: agent.id,
+        assignedAgentName: agent.name,
+        assignedAgentEmail: agent.email,
+        assignedAgentAvatar: agent.avatar,
+      });
+    },
+    updatePriority: (id, priority) => update(id, { priority }),
+    addNote: (id, note) => {
+      void mutate({ action: "note", id, note });
+    },
+    deleteRequest: (id) => {
+      void mutate({ action: "delete", id });
+    },
+    bulkApprove: (ids) => {
+      ids.forEach((id) => approveRequest(id));
+    },
+    bulkDecline: (ids, reason) => {
+      ids.forEach((id) => declineRequest(id, reason));
+    },
+    loginAdmin: async (code) => {
+      const result = await mutate({ action: "admin-login", code });
+      if (!result) return false;
+      generation.current++;
+      setAdmin(true);
+      setNotification(null);
+      await refresh();
+      return true;
+    },
+    logoutAdmin,
+  };
   return (
-    <RequestContext.Provider
-      value={{
-        requests,
-        pendingCount,
-        urgentCount,
-        approvedCount,
-        completedCount,
-        unrepliedCount,
-        visitorUnreadReplyCount,
-        readReplyIds,
-        markReplyAsRead,
-        markAllRepliesAsRead,
-        latestVisitorNotification,
-        dismissVisitorNotification,
-        targetCustomEmail,
-        totalVolumeEstimate,
-        addRequest,
-        sendReply,
-        sendDirectMessage,
-        approveRequest,
-        declineRequest,
-        completeRequest,
-        assignAgent,
-        updatePriority,
-        addNote,
-        deleteRequest,
-        bulkApprove,
-        bulkDecline,
-        resetToDefaults,
-        isAdminAuthenticated,
-        loginAdmin,
-        logoutAdmin,
-      }}
-    >
+    <RequestContext.Provider value={value}>
       {children}
+      {error && (
+        <div
+          role="alert"
+          className="fixed top-24 left-1/2 -translate-x-1/2 z-[150] max-w-lg w-[90%] rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900 shadow-lg flex gap-4"
+        >
+          <span>{error}</span>
+          <button onClick={() => setError(null)} aria-label="Dismiss error">
+            ×
+          </button>
+        </div>
+      )}
+      {accountOpen && (
+        <VisitorAccount
+          mode={callbackMode}
+          inviteToken={inviteToken}
+          onClose={() => {
+            setAccountOpen(false);
+            setCallbackMode(undefined);
+            setInviteToken(undefined);
+          }}
+          onSuccess={async () => {
+            setVisitor(await getUser());
+            await refresh();
+            setAccountOpen(false);
+            setCallbackMode(undefined);
+          }}
+        />
+      )}
     </RequestContext.Provider>
   );
 };
-
-export const useRequests = (): RequestContextType => {
+export const useRequests = () => {
   const context = useContext(RequestContext);
-  if (!context) {
-    throw new Error('useRequests must be used within a RequestProvider');
-  }
+  if (!context) throw new Error("RequestProvider is required");
   return context;
 };

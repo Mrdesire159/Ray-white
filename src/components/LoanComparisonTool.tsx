@@ -82,7 +82,7 @@ const DEFAULT_LOAN_PRODUCTS: LoanProduct[] = [
     },
     pros: ['100% Offset account included', 'Make unlimited extra repayments', 'Redraw available anytime'],
     cons: ['Repayments can rise if RBA cash rate increases'],
-    color: '#3b82f6', // blue
+    color: '#7b7b7b', // blue
   },
   {
     id: 'prod-fix-3yr',
@@ -104,7 +104,7 @@ const DEFAULT_LOAN_PRODUCTS: LoanProduct[] = [
     },
     pros: ['Guaranteed repayments for 3 years', 'Shielded from rate hikes', 'Budgeting certainty'],
     cons: ['Break fees apply if refinanced early', 'Limited extra repayments (max $10k/yr)'],
-    color: '#10b981', // emerald
+    color: '#919191', // emerald
   },
   {
     id: 'prod-split-5050',
@@ -147,7 +147,7 @@ const DEFAULT_LOAN_PRODUCTS: LoanProduct[] = [
     },
     pros: ['Long-term peace of mind (60 months)', 'Immunized from 5 years of rate changes'],
     cons: ['Higher break fees', 'Cannot benefit if interest rates fall'],
-    color: '#8b5cf6', // purple
+    color: '#717171', // purple
   },
 ];
 
@@ -670,15 +670,15 @@ export const LoanComparisonTool: React.FC<LoanComparisonToolProps> = ({
               data={chartData}
               margin={{ top: 10, right: 10, left: 10, bottom: 25 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e7e7e7" vertical={false} />
               <XAxis
                 dataKey="name"
-                stroke="#64748b"
+                stroke="#727272"
                 fontSize={11}
                 tickLine={false}
               />
               <YAxis
-                stroke="#64748b"
+                stroke="#727272"
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}

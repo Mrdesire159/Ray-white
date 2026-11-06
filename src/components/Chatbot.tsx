@@ -531,10 +531,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({
               </div>
             ) : (
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   if (!userPhoneInput) return;
-                  addRequest({
+                  const requestId = await addRequest({
                     type: 'contact',
                     priority: 'urgent',
                     targetEmail: targetCustomEmail,
@@ -549,6 +549,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                       message: `Visitor requested priority callback with ${agentConnectModal.name} (${agentConnectModal.office}). Phone: ${userPhoneInput}`,
                     },
                   });
+                  if (!requestId) return;
                   setAgentRequestSuccess(true);
                 }}
                 className="space-y-3"

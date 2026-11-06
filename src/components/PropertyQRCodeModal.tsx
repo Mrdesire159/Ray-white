@@ -79,7 +79,7 @@ export const PropertyQRCodeModal: React.FC<PropertyQRCodeModalProps> = ({
       margin: 2,
       errorCorrectionLevel: 'M',
       color: {
-        dark: '#0f172a',
+        dark: '#171717',
         light: '#ffffff',
       },
     })

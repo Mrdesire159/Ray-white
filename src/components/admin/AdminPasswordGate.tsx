@@ -16,20 +16,24 @@ export const AdminPasswordGate: React.FC<AdminPasswordGateProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+  const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!password.trim()) {
-      setError('Please enter the administrative master passcode.');
+      setError('Please enter the staff access code.');
       return;
     }
 
-    const isSuccess = loginAdmin(password);
+    setBusy(true);
+    const isSuccess = await loginAdmin(password);
+    setBusy(false);
     if (isSuccess) {
       setError(null);
       onSuccess();
@@ -57,7 +61,7 @@ export const AdminPasswordGate: React.FC<AdminPasswordGateProps> = ({
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">Admin Portal Access</h2>
           <p className="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
-            This administrative area is hidden from the public. Please enter the master access passcode to unlock requests and approvals.
+            This administrative area is hidden from the public. Please enter the staff access code to unlock requests and approvals.
           </p>
         </div>
 
@@ -88,6 +92,8 @@ export const AdminPasswordGate: React.FC<AdminPasswordGateProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -97,9 +103,10 @@ export const AdminPasswordGate: React.FC<AdminPasswordGateProps> = ({
 
           <button
             type="submit"
+            disabled={busy}
             className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-xl text-sm font-black transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
-            <span>Authenticate &amp; Enter</span>
+            <span>{busy ? 'Checking access…' : 'Authenticate & Enter'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 
