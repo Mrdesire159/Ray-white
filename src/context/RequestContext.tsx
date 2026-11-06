@@ -18,6 +18,21 @@ interface RequestContextType {
   approvedCount: number;
   completedCount: number;
   unrepliedCount: number;
+  visitorUnreadReplyCount: number;
+  readReplyIds: string[];
+  markReplyAsRead: (replyId: string) => void;
+  markAllRepliesAsRead: () => void;
+  latestVisitorNotification: {
+    replyId: string;
+    requestId: string;
+    senderEmail: string;
+    senderName: string;
+    recipientName: string;
+    subject: string;
+    message: string;
+    sentAt: string;
+  } | null;
+  dismissVisitorNotification: () => void;
   targetCustomEmail: string;
   totalVolumeEstimate: number;
   addRequest: (newReq: Partial<AdminRequest> & { type: RequestType; client: AdminRequest['client'] }) => string;
@@ -105,12 +120,80 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [requests]);
 
+  // Visitor read replies tracking in localStorage
+  const [readReplyIds, setReadReplyIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('rw_visitor_read_replies_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Track latest notification toast for visitor
+  const [latestVisitorNotification, setLatestVisitorNotification] = useState<{
+    replyId: string;
+    requestId: string;
+    senderEmail: string;
+    senderName: string;
+    recipientName: string;
+    subject: string;
+    message: string;
+    sentAt: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('rw_visitor_read_replies_v1', JSON.stringify(readReplyIds));
+    } catch {}
+  }, [readReplyIds]);
+
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const urgentCount = requests.filter((r) => r.status === 'pending' && r.priority === 'urgent').length;
   const approvedCount = requests.filter((r) => r.status === 'approved').length;
   const completedCount = requests.filter((r) => r.status === 'completed').length;
   const unrepliedCount = requests.filter((r) => !r.replies || r.replies.length === 0).length;
   const targetCustomEmail = 'contact@raywhiterealestate.com';
+
+  // Calculate unread replies sent to the visitor
+  const allReplies = requests.flatMap((r) => r.replies || []);
+  const visitorUnreadReplyCount = allReplies.filter((rep) => !readReplyIds.includes(rep.id)).length;
+
+  const markReplyAsRead = (replyId: string) => {
+    setReadReplyIds((prev) => (prev.includes(replyId) ? prev : [...prev, replyId]));
+  };
+
+  const markAllRepliesAsRead = () => {
+    const allIds = requests.flatMap((r) => r.replies || []).map((rep) => rep.id);
+    setReadReplyIds(allIds);
+    setLatestVisitorNotification(null);
+  };
+
+  const dismissVisitorNotification = () => {
+    setLatestVisitorNotification(null);
+  };
+
+  // Play subtle notification chime when a reply is received
+  const playNotificationChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.36);
+    } catch {
+      // Audio playback might be restricted before user gesture
+    }
+  };
 
   // Calculate estimated total pipeline volume
   const totalVolumeEstimate = requests.reduce((sum, req) => {
@@ -181,6 +264,36 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const senderEmail = options?.senderEmail || targetCustomEmail;
     const senderName = options?.senderName || 'Ray White Concierge';
 
+    // Locate target request to extract recipient context
+    const targetReq = requests.find((r) => r.id === requestId);
+    const recipientName = targetReq?.client.name || 'Visitor';
+    const subject = options?.subject || targetReq?.details.subject || `Re: Your Inquiry with Ray White`;
+
+    // Trigger in-site notification toast for the visitor
+    setLatestVisitorNotification({
+      replyId,
+      requestId,
+      senderEmail,
+      senderName,
+      recipientName,
+      subject,
+      message: replyText,
+      sentAt: timestamp,
+    });
+
+    // Play pleasant visitor notification chime
+    playNotificationChime();
+
+    // Trigger system browser notification if permitted
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification(`New message from ${senderName} (${senderEmail})`, {
+          body: replyText,
+          icon: '/favicon.ico',
+        });
+      }
+    } catch {}
+
     setRequests((prev) =>
       prev.map((req) => {
         if (req.id !== requestId) return req;
@@ -191,7 +304,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
           senderName,
           recipientEmail: req.client.email,
           recipientName: req.client.name,
-          subject: options?.subject || req.details.subject || `Re: Your Inquiry with Ray White`,
+          subject,
           message: replyText,
           sentAt: timestamp,
         };
@@ -532,6 +645,12 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
         approvedCount,
         completedCount,
         unrepliedCount,
+        visitorUnreadReplyCount,
+        readReplyIds,
+        markReplyAsRead,
+        markAllRepliesAsRead,
+        latestVisitorNotification,
+        dismissVisitorNotification,
         targetCustomEmail,
         totalVolumeEstimate,
         addRequest,

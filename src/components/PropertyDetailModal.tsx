@@ -308,6 +308,11 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     For Rent
                   </span>
                 )}
+                {activeProp.priceReduced && (
+                  <span className="px-3 py-1 text-xs font-black rounded-md bg-rose-600 text-white shadow-xs flex items-center gap-1 border border-rose-400/40">
+                    🔥 Below Market Valuation
+                  </span>
+                )}
                 {property.auctionDate && (
                   <span className="px-3 py-1 text-xs font-semibold rounded-md bg-neutral-900/90 text-[#FFD200] backdrop-blur-xs flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5" />
@@ -409,8 +414,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                       </span>
                     )}
                     {activeProp.priceReduced && activeProp.savingsAmount && activeProp.savingsAmount > 0 && (
-                      <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300">
-                        Price Reduced by ${activeProp.savingsAmount.toLocaleString()}
+                      <span className="text-xs font-black text-rose-800 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-300 flex items-center gap-1.5">
+                        <span>🔥 Below Market: Save ${activeProp.savingsAmount.toLocaleString()}{isSale ? '' : '/wk'}</span>
                       </span>
                     )}
                     <button

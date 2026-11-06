@@ -10,7 +10,6 @@ import {
   ChevronUp,
   Tag,
   ShieldCheck,
-  Zap,
 } from 'lucide-react';
 import { usePrice } from '../context/PriceContext';
 
@@ -32,40 +31,19 @@ export const RealtimePriceBar: React.FC = () => {
     <div className="bg-neutral-950 text-white border-b border-amber-400/30 transition-all shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Left: Indicator & Status */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-              </span>
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#FFD200] flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 fill-[#FFD200]" />
-                <span>Live Price Sync Engine</span>
-              </span>
-            </div>
-
-            <span className="text-neutral-500 hidden md:inline">|</span>
-
+          {/* Left: Buyer Savings (shown only when active reductions produce savings) */}
+          {totalPortfolioSavings > 0 ? (
             <div className="text-xs text-neutral-300 flex items-center gap-2">
-              <span className="font-semibold">
-                Prices Reduced by{' '}
-                <strong className="text-emerald-400 font-extrabold tabular-nums">
-                  {globalReductionPercent}%
-                </strong>{' '}
-                in Real-Time
+              <span className="text-neutral-400 text-[11px]">
+                Total Buyer Savings:{' '}
+                <strong className="text-[#FFD200] font-mono">
+                  ${totalPortfolioSavings.toLocaleString()} AUD
+                </strong>
               </span>
-              {totalPortfolioSavings > 0 && (
-                <span className="hidden lg:inline text-neutral-400 text-[11px]">
-                  (Total Buyer Savings:{' '}
-                  <strong className="text-[#FFD200] font-mono">
-                    ${totalPortfolioSavings.toLocaleString()} AUD
-                  </strong>
-                  )
-                </span>
-              )}
             </div>
-          </div>
+          ) : (
+            <div />
+          )}
 
           {/* Right: Quick Reduction Presets & Custom Slider Toggle - Each button uniquely themed */}
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">

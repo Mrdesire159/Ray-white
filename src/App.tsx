@@ -19,6 +19,8 @@ import { CompareFloatingBar } from './components/CompareFloatingBar';
 import { PriceListView } from './components/PriceListView';
 import { BookDisplayView } from './components/BookDisplayView';
 import { ReplyPortal } from './components/ReplyPortal';
+import { AustraliaAirbnbExplorer } from './components/airbnb/AustraliaAirbnbExplorer';
+import { VisitorNotificationToast } from './components/VisitorNotificationToast';
 import { RollingBallDisplay } from './components/RollingBallDisplay';
 import { VillaCinematicDisplay } from './components/3d/VillaCinematicDisplay';
 import { HouseSlideView } from './components/HouseSlideView';
@@ -72,7 +74,7 @@ export default function App() {
   const { syncedProperties } = usePrice();
   const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<
-    'home' | 'listings' | 'pricelist' | 'book' | 'rollingball' | 'trends' | 'videos' | 'sell' | 'agents' | 'contact' | 'admin' | 'villatour' | 'replyportal'
+    'home' | 'listings' | 'pricelist' | 'book' | 'rollingball' | 'trends' | 'videos' | 'sell' | 'agents' | 'contact' | 'admin' | 'villatour' | 'replyportal' | 'airbnb'
   >('home');
   const [heroMode, setHeroMode] = useState<'cinematic' | 'rollingball'>('cinematic');
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -223,7 +225,8 @@ export default function App() {
       view === 'sell' ||
       view === 'agents' ||
       view === 'contact' ||
-      view === 'replyportal'
+      view === 'replyportal' ||
+      view === 'airbnb'
     ) {
       setCurrentView(view as any);
     } else {
@@ -447,6 +450,119 @@ export default function App() {
                           Bowral, NSW • Includes 4K Drone Boundary Cadastre
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* 4.8. Australian Airbnb & Holiday Stays Collection Showcase */}
+            <section className="bg-white py-14 border-b border-neutral-200">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                  <div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-black border border-blue-200 mb-2">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Ray White Holiday Escapes • Across Australia</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-neutral-900">
+                      Airbnb Stays Spread Across Australia
+                    </h2>
+                    <p className="text-sm sm:text-base text-neutral-600 mt-1 max-w-xl">
+                      Explore handpicked Australian holiday retreats with live location price tags—from Bondi oceanfront villas to Whitsundays reef estates and Margaret River winery lodges.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('airbnb')}
+                    className="px-5 py-3 bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-md shrink-0 active:scale-95"
+                  >
+                    <Compass className="w-4 h-4 text-[#FFD200]" />
+                    <span>Open Interactive Australia Price Map</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Popular Regional Destinations Grid with Location Price Tags */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div
+                    onClick={() => handleNavigate('airbnb')}
+                    className="group relative rounded-2xl overflow-hidden border border-neutral-200 aspect-video sm:aspect-square cursor-pointer shadow-xs hover:shadow-xl transition-all"
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"
+                      alt="Sydney & Bondi Beach"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/20 to-transparent" />
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#FFD200] text-neutral-950 font-black text-xs shadow-md">
+                      From $980 AUD / nt
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <span className="text-[10px] uppercase font-bold text-[#FFD200]">NSW Coast</span>
+                      <h4 className="text-base font-black truncate">Bondi &amp; Palm Beach</h4>
+                      <p className="text-[11px] text-neutral-300">Cliffside villas &amp; boathouses</p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => handleNavigate('airbnb')}
+                    className="group relative rounded-2xl overflow-hidden border border-neutral-200 aspect-video sm:aspect-square cursor-pointer shadow-xs hover:shadow-xl transition-all"
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1520483601560-389dff434fdf?auto=format&fit=crop&w=800&q=80"
+                      alt="Byron Bay & Gold Coast"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/20 to-transparent" />
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#FFD200] text-neutral-950 font-black text-xs shadow-md">
+                      From $540 AUD / nt
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <span className="text-[10px] uppercase font-bold text-[#FFD200]">Surf Paradise</span>
+                      <h4 className="text-base font-black truncate">Byron Bay &amp; Gold Coast</h4>
+                      <p className="text-[11px] text-neutral-300">Wategos pavilions &amp; sky penthouses</p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => handleNavigate('airbnb')}
+                    className="group relative rounded-2xl overflow-hidden border border-neutral-200 aspect-video sm:aspect-square cursor-pointer shadow-xs hover:shadow-xl transition-all"
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=800&q=80"
+                      alt="Whitsundays & Hamilton Island"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/20 to-transparent" />
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#FFD200] text-neutral-950 font-black text-xs shadow-md">
+                      From $650 AUD / nt
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <span className="text-[10px] uppercase font-bold text-[#FFD200]">Tropical QLD</span>
+                      <h4 className="text-base font-black truncate">Hamilton Island &amp; Noosa</h4>
+                      <p className="text-[11px] text-neutral-300">Coral sea sanctuary &amp; treehouses</p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => handleNavigate('airbnb')}
+                    className="group relative rounded-2xl overflow-hidden border border-neutral-200 aspect-video sm:aspect-square cursor-pointer shadow-xs hover:shadow-xl transition-all"
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=800&q=80"
+                      alt="Margaret River & Mornington"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/20 to-transparent" />
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#FFD200] text-neutral-950 font-black text-xs shadow-md">
+                      From $340 AUD / nt
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <span className="text-[10px] uppercase font-bold text-[#FFD200]">Wine Country</span>
+                      <h4 className="text-base font-black truncate">Margaret River &amp; Barossa</h4>
+                      <p className="text-[11px] text-neutral-300">Vineyard hot tubs &amp; stone lodges</p>
                     </div>
                   </div>
                 </div>
@@ -778,6 +894,11 @@ export default function App() {
           />
         )}
 
+        {/* VIEW: AIRBNB & HOLIDAY STAYS ACROSS AUSTRALIA */}
+        {currentView === 'airbnb' && (
+          <AustraliaAirbnbExplorer onOpenInbox={() => handleNavigate('replyportal')} />
+        )}
+
         {/* VIEW: ADMIN PORTAL (PROTECTED BY PASSCODE 000333999) */}
         {currentView === 'admin' && (
           isAdminAuthenticated ? (
@@ -878,6 +999,9 @@ export default function App() {
           setCurrentView('admin');
         }}
       />
+
+      {/* Global In-Site Visitor Notification Toast for Replies */}
+      <VisitorNotificationToast onOpenInbox={() => handleNavigate('replyportal')} />
 
       {/* Footer (hidden in dedicated Admin Portal view) */}
       {currentView !== 'admin' && (

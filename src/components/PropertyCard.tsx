@@ -281,6 +281,12 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             </span>
           )}
 
+          {property.priceReduced && (
+            <span className="px-2.5 py-1 text-[11px] font-black rounded-lg bg-rose-600 text-white shadow-xs flex items-center gap-1 border border-rose-400/40">
+              <span>🔥 Below Market</span>
+            </span>
+          )}
+
           {property.auctionDate && (
             <span className="px-2 py-1 text-[11px] font-bold rounded-lg bg-neutral-950/90 text-amber-400 backdrop-blur-xs flex items-center gap-1 border border-white/10">
               <Calendar className="w-3 h-3 text-amber-400" />
@@ -375,8 +381,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
                 </span>
               )}
               {property.priceReduced && property.savingsAmount && property.savingsAmount > 0 && (
-                <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                  Save ${property.savingsAmount.toLocaleString()}
+                <span className="text-[10px] font-extrabold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                  Save ${property.savingsAmount.toLocaleString()}{isSale ? '' : '/wk'} Below Market
                 </span>
               )}
             </div>

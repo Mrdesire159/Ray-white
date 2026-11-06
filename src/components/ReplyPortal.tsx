@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Mail,
+  Inbox,
+  Bell,
   Send,
   MessageSquare,
   Search,
@@ -39,6 +41,10 @@ export const ReplyPortal: React.FC<ReplyPortalProps> = ({
     sendReply,
     sendDirectMessage,
     unrepliedCount,
+    visitorUnreadReplyCount,
+    readReplyIds,
+    markReplyAsRead,
+    markAllRepliesAsRead,
   } = useRequests();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,6 +97,17 @@ export const ReplyPortal: React.FC<ReplyPortalProps> = ({
   const selectedRequest = useMemo(() => {
     return requests.find((r) => r.id === selectedRequestId) || filteredRequests[0] || null;
   }, [requests, selectedRequestId, filteredRequests]);
+
+  // Mark replies of currently viewed message as read by visitor
+  useEffect(() => {
+    if (selectedRequest?.replies && selectedRequest.replies.length > 0) {
+      selectedRequest.replies.forEach((rep) => {
+        if (!readReplyIds.includes(rep.id)) {
+          markReplyAsRead(rep.id);
+        }
+      });
+    }
+  }, [selectedRequest, readReplyIds, markReplyAsRead]);
 
   const handleSendReplySubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -171,12 +188,13 @@ export const ReplyPortal: React.FC<ReplyPortalProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-none">
-                    Ray White Reply &amp; Chat Portal
+                  <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-none flex items-center gap-2">
+                    <Inbox className="w-5 h-5 text-blue-400" />
+                    <span>Ray White Inbox &amp; Messages</span>
                   </h1>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Live In-Site System
+                    Live Visitor Notifications
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
@@ -188,6 +206,17 @@ export const ReplyPortal: React.FC<ReplyPortalProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Visitor Unread Replies Pill */}
+            {visitorUnreadReplyCount > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-red-950/80 border border-red-800 text-xs text-red-200 animate-pulse">
+                <Bell className="w-3.5 h-3.5 text-red-400" />
+                <span>Unread Replies:</span>
+                <span className="px-1.5 py-0.2 rounded-full font-black text-[11px] bg-red-600 text-white">
+                  {visitorUnreadReplyCount}
+                </span>
+              </div>
+            )}
+
             {/* Quick Stat Pill */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-neutral-300">
               <Mail className="w-3.5 h-3.5 text-[#FFD200]" />

@@ -113,8 +113,9 @@ export const PriceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         Math.round(baseSellingPrice - (isRealTimeSyncActive ? baseSellingPrice * (globalReductionPercent / 100) : 0) - customReduction)
       );
 
-      const actualSavings = basePrice - reducedPrice;
-      const isActuallyReduced = actualSavings > 0;
+      const originalValuation = prop.originalPrice || basePrice;
+      const actualSavings = originalValuation - reducedPrice;
+      const isActuallyReduced = prop.priceReduced || actualSavings > 0;
 
       // Format clean display strings
       let priceDisplay = '';
@@ -124,11 +125,13 @@ export const PriceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         priceDisplay = `$${reducedPrice.toLocaleString()} / week`;
       }
 
-      let originalPriceDisplay = '';
-      if (isSale) {
-        originalPriceDisplay = `$${basePrice.toLocaleString()}`;
-      } else {
-        originalPriceDisplay = `$${basePrice.toLocaleString()} / week`;
+      let originalPriceDisplay = prop.originalPriceDisplay;
+      if (!originalPriceDisplay) {
+        if (isSale) {
+          originalPriceDisplay = `$${originalValuation.toLocaleString()}`;
+        } else {
+          originalPriceDisplay = `$${originalValuation.toLocaleString()} / week`;
+        }
       }
 
       // Rentage weekly & monthly calculations to stay 100% equal in real time
@@ -154,7 +157,7 @@ export const PriceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         rentagePricePerWeek: rentageWeekly,
         rentagePricePerMonth: rentageMonthly,
         grossYield,
-        originalPrice: basePrice,
+        originalPrice: originalValuation,
         originalPriceDisplay,
         priceReduced: isActuallyReduced,
         savingsAmount: actualSavings,

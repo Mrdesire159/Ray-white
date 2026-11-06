@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Heart, Phone, CalendarCheck, Scale, MessageSquare, Sparkles, ShieldCheck, Mail } from 'lucide-react';
+import { Menu, X, Heart, Phone, CalendarCheck, Scale, MessageSquare, Sparkles, ShieldCheck, Mail, Inbox, Bell } from 'lucide-react';
 import { useRequests } from '../context/RequestContext';
 import { ThemeSelector } from './ThemeSelector';
 
@@ -25,12 +25,13 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenChat,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { pendingCount, isAdminAuthenticated, unrepliedCount, targetCustomEmail } = useRequests();
+  const { pendingCount, isAdminAuthenticated, unrepliedCount, visitorUnreadReplyCount, targetCustomEmail } = useRequests();
 
   const navItems = [
     { id: 'home', label: 'Home' },
     { id: 'buy', label: 'Buy', tab: 'sale' as const },
     { id: 'rent', label: 'Rent', tab: 'rent' as const },
+    { id: 'airbnb', label: 'Airbnb & Stays', badge: 'AU' },
     { id: 'trends', label: 'Market Trends' },
     { id: 'pricelist', label: 'Price List' },
     { id: 'agents', label: 'Agents' },
@@ -70,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-sm font-medium text-neutral-700">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-medium text-neutral-700">
             {navItems.map((item) => {
               const isActive =
                 currentView === item.id ||
@@ -79,11 +80,16 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id, item.tab)}
-                  className={`relative py-1 transition-colors whitespace-nowrap shrink-0 hover:text-neutral-950 cursor-pointer ${
+                  className={`relative py-1 transition-colors whitespace-nowrap shrink-0 hover:text-neutral-950 cursor-pointer flex items-center gap-1 ${
                     isActive ? 'text-neutral-950 font-semibold' : 'text-neutral-600'
                   }`}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-[#FFD200] text-neutral-950 shadow-2xs">
+                      {item.badge}
+                    </span>
+                  )}
                   {isActive && (
                     <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFD200] rounded-full" />
                   )}
@@ -94,29 +100,38 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right Action Zone */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 lg:gap-3 shrink-0">
-            {/* Inbound Messages & Reply Chat Portal - Custom Email Channel */}
+            {/* Visitor & Staff Inbox - Real-Time In-Site Messages & Replies */}
             <button
               onClick={() => handleNavClick('replyportal')}
               className={`relative px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs active:scale-95 ${
                 currentView === 'replyportal'
                   ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-500/25 font-black'
+                  : visitorUnreadReplyCount > 0
+                  ? 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100 ring-2 ring-red-400/20'
                   : 'text-neutral-800 bg-white hover:bg-neutral-100 border-neutral-300'
               }`}
-              aria-label="Open In-Site Reply Portal"
-              title={`In-Site Reply Portal (${targetCustomEmail})`}
+              aria-label="Open Inbox"
+              title={`Inbox (${visitorUnreadReplyCount > 0 ? `${visitorUnreadReplyCount} new unread replies from ${targetCustomEmail}` : `Messages & replies from ${targetCustomEmail}`})`}
             >
               <div className="relative">
-                <Mail className={`w-4 h-4 ${currentView === 'replyportal' ? 'text-white' : 'text-blue-600'}`} />
-                {unrepliedCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+                <Inbox className={`w-4 h-4 ${currentView === 'replyportal' ? 'text-white' : visitorUnreadReplyCount > 0 ? 'text-red-600 animate-bounce' : 'text-blue-600'}`} />
+                {visitorUnreadReplyCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600" />
+                  </span>
                 )}
               </div>
-              <span className="hidden md:inline font-bold">Reply Portal</span>
-              {unrepliedCount > 0 && (
+              <span className="hidden md:inline font-bold">Inbox</span>
+              {visitorUnreadReplyCount > 0 ? (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-red-600 text-white shadow-xs tabular-nums animate-pulse">
+                  {visitorUnreadReplyCount}
+                </span>
+              ) : unrepliedCount > 0 && isAdminAuthenticated ? (
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-xs tabular-nums">
                   {unrepliedCount}
                 </span>
-              )}
+              ) : null}
             </button>
 
             {/* Admin Portal Button - Hidden from public, only visible when staff is authenticated */}
@@ -254,17 +269,25 @@ export const Header: React.FC<HeaderProps> = ({
             ))}
             <button
               onClick={() => handleNavClick('replyportal')}
-              className="w-full text-left py-2.5 px-3 rounded-md text-blue-900 bg-blue-50/80 hover:bg-blue-100 font-bold text-sm flex items-center justify-between transition-colors cursor-pointer"
+              className={`w-full text-left py-2.5 px-3 rounded-md font-bold text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                visitorUnreadReplyCount > 0
+                  ? 'text-red-900 bg-red-50 hover:bg-red-100 border border-red-200'
+                  : 'text-blue-900 bg-blue-50/80 hover:bg-blue-100'
+              }`}
             >
               <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-blue-600" />
-                <span>Reply Chat Portal ({targetCustomEmail})</span>
+                <Inbox className={`w-4 h-4 ${visitorUnreadReplyCount > 0 ? 'text-red-600' : 'text-blue-600'}`} />
+                <span>Inbox &amp; Messages ({targetCustomEmail})</span>
               </div>
-              {unrepliedCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white">
-                  {unrepliedCount} New
+              {visitorUnreadReplyCount > 0 ? (
+                <span className="px-2 py-0.5 rounded-full text-xs font-black bg-red-600 text-white animate-pulse">
+                  {visitorUnreadReplyCount} New Reply
                 </span>
-              )}
+              ) : unrepliedCount > 0 ? (
+                <span className="px-2 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white">
+                  {unrepliedCount}
+                </span>
+              ) : null}
             </button>
             {isAdminAuthenticated && (
               <button
