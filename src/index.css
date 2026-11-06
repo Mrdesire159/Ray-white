@@ -294,3 +294,42 @@ body {
   background: transparent !important;
   border: none !important;
 }
+
+/* Airbnb-only holiday inspiration carousel. */
+.airbnb-roll-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  padding-bottom: 12px;
+  position: relative;
+}
+.airbnb-roll-card {
+  position: relative;
+  flex: 0 0 min(82vw, 440px);
+  height: 450px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #22252a;
+  scroll-snap-align: start;
+}
+.airbnb-roll-track::after { content: ''; flex: 0 0 max(0px, calc(100% - 460px)); }
+.airbnb-roll-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #d4d4d4;
+  border-radius: 50%;
+  background: white;
+  color: #22252a;
+  cursor: pointer;
+}
+.airbnb-roll-control:hover { background: #ffd200; border-color: #ffd200; }
+.airbnb-photo-roll button:focus-visible { outline: 2px solid #22252a; outline-offset: 3px; }
+@media (max-width: 640px) {
+  .airbnb-roll-card { height: 410px; }
+  .airbnb-roll-track::after { flex-basis: calc(18vw - 52px); }
+}
