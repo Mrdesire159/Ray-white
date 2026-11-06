@@ -23,6 +23,15 @@ import {
   Layers,
   Award,
   PieChart as PieChartIcon,
+  TrendingUp,
+  Gauge,
+  AlertTriangle,
+  Sliders,
+  Table,
+  Download,
+  FileSpreadsheet,
+  Search,
+  ArrowLeftRight,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -48,6 +57,7 @@ export interface LoanRepaymentCalculatorProps {
   isOpenModal?: boolean;
   onCloseModal?: () => void;
   inline?: boolean;
+  onOpenRateCompare?: () => void;
 }
 
 export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = ({
@@ -57,6 +67,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
   isOpenModal = false,
   onCloseModal,
   inline = false,
+  onOpenRateCompare,
 }) => {
   const initialBasePrice = propertyPrice > 0 ? propertyPrice : 1500000;
 
@@ -73,9 +84,16 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
   const [showExtraSimulator, setShowExtraSimulator] = useState<boolean>(false);
   const [showUpfrontCosts, setShowUpfrontCosts] = useState<boolean>(true);
   const [consultationRequested, setConsultationRequested] = useState<boolean>(false);
-  const [graphView, setGraphView] = useState<'annual' | 'composition' | 'balance' | 'cumulative'>('annual');
-  const [showScheduleTable, setShowScheduleTable] = useState<boolean>(false);
+  const [graphView, setGraphView] = useState<'annual' | 'stress' | 'composition' | 'balance' | 'cumulative'>('stress');
+  const [showScheduleTable, setShowScheduleTable] = useState<boolean>(true);
+  const [tableFilterMode, setTableFilterMode] = useState<'all' | 'milestones'>('all');
+  const [tableSearchQuery, setTableSearchQuery] = useState<string>('');
   const [inspectYear, setInspectYear] = useState<number>(5);
+
+  // Rate Hike Stress-Test State
+  const [stressRateHike, setStressRateHike] = useState<number>(1.5); // Default +1.50% hike to demonstrate immediately
+  const [isStressTestEnabled, setIsStressTestEnabled] = useState<boolean>(true);
+  const [applyStressToAmortisation, setApplyStressToAmortisation] = useState<boolean>(false);
 
   // Sync inspectYear with loan term changes
   useEffect(() => {
@@ -200,6 +218,47 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
     const isLmiApplicable = depositPercent < 20;
     const estimatedLmi = isLmiApplicable ? Math.round(loanAmount * 0.02) : 0;
 
+    // Rate Hike Stress-Test Metrics
+    const activeHike = isStressTestEnabled ? stressRateHike : 0;
+    const stressedInterestRate = Number((interestRate + activeHike).toFixed(2));
+    const stressedMonthlyRate = stressedInterestRate / 100 / 12;
+
+    let stressedMonthlyPayment = 0;
+    if (loanAmount <= 0) {
+      stressedMonthlyPayment = 0;
+    } else if (repaymentType === 'io') {
+      stressedMonthlyPayment = Math.round(loanAmount * stressedMonthlyRate);
+    } else {
+      if (stressedMonthlyRate === 0) {
+        stressedMonthlyPayment = Math.round(loanAmount / totalMonths);
+      } else {
+        const factor = Math.pow(1 + stressedMonthlyRate, totalMonths);
+        stressedMonthlyPayment = Math.round((loanAmount * stressedMonthlyRate * factor) / (factor - 1));
+      }
+    }
+
+    const stressedFortnightlyPayment = Math.round((stressedMonthlyPayment * 12) / 26);
+    const stressedWeeklyPayment = Math.round((stressedMonthlyPayment * 12) / 52);
+
+    const stressedActivePeriodicRepayment =
+      repaymentFrequency === 'monthly'
+        ? stressedMonthlyPayment
+        : repaymentFrequency === 'fortnightly'
+        ? stressedFortnightlyPayment
+        : stressedWeeklyPayment;
+
+    const monthlyHikeDelta = Math.max(0, stressedMonthlyPayment - baseMonthlyPayment);
+    const periodicHikeDelta = Math.max(0, stressedActivePeriodicRepayment - activePeriodicRepayment);
+    const annualHikeDelta = monthlyHikeDelta * 12;
+    const hikePercentageIncrease = baseMonthlyPayment > 0 ? (monthlyHikeDelta / baseMonthlyPayment) * 100 : 0;
+
+    const stressedTotalPayments =
+      repaymentType === 'io'
+        ? stressedMonthlyPayment * totalMonths + loanAmount
+        : stressedMonthlyPayment * totalMonths;
+    const stressedTotalInterest = Math.max(0, stressedTotalPayments - loanAmount);
+    const extraLifetimeInterestFromHike = Math.max(0, stressedTotalInterest - totalInterest);
+
     return {
       baseMonthlyPayment,
       fortnightlyPayment,
@@ -219,6 +278,20 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
       totalCashRequired,
       isLmiApplicable,
       estimatedLmi,
+      // Stress test outputs
+      activeHike,
+      stressedInterestRate,
+      stressedMonthlyPayment,
+      stressedFortnightlyPayment,
+      stressedWeeklyPayment,
+      stressedActivePeriodicRepayment,
+      monthlyHikeDelta,
+      periodicHikeDelta,
+      annualHikeDelta,
+      hikePercentageIncrease,
+      stressedTotalPayments,
+      stressedTotalInterest,
+      extraLifetimeInterestFromHike,
     };
   }, [
     purchasePrice,
@@ -231,13 +304,72 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
     extraRepaymentMonthly,
     stateAbbr,
     depositPercent,
+    stressRateHike,
+    isStressTestEnabled,
+  ]);
+
+  // Stress Test Monthly Payment Chart Scenarios
+  const stressCurveData = useMemo(() => {
+    if (loanAmount <= 0) return [];
+    const baseMonthly = metrics.baseMonthlyPayment;
+    const totalMonths = loanTermYears * 12;
+    const standardHikes = [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+    const currentHike = isStressTestEnabled ? Number(stressRateHike.toFixed(2)) : 0;
+
+    // Merge standard presets with current user slider value if unique
+    const allHikes = Array.from(new Set([...standardHikes, currentHike])).sort((a, b) => a - b);
+
+    return allHikes.map((hike) => {
+      const rate = Number((interestRate + hike).toFixed(2));
+      const mRate = rate / 100 / 12;
+      let payment = 0;
+      if (repaymentType === 'io') {
+        payment = Math.round(loanAmount * mRate);
+      } else {
+        if (mRate === 0) {
+          payment = Math.round(loanAmount / totalMonths);
+        } else {
+          const factor = Math.pow(1 + mRate, totalMonths);
+          payment = Math.round((loanAmount * mRate * factor) / (factor - 1));
+        }
+      }
+      const extraPerMonth = Math.max(0, payment - baseMonthly);
+      const annualExtra = extraPerMonth * 12;
+      const isSelected = Math.abs(hike - currentHike) < 0.04;
+      const isApraBuffer = Math.abs(hike - 3.0) < 0.04;
+
+      return {
+        hike,
+        hikeLabel: hike === 0 ? 'Base' : `+${hike.toFixed(2)}%`,
+        rate,
+        rateLabel: `${rate.toFixed(2)}%`,
+        basePayment: baseMonthly,
+        extraPayment: extraPerMonth,
+        totalMonthlyPayment: payment,
+        annualExtra,
+        isSelected,
+        isApraBuffer,
+      };
+    });
+  }, [
+    loanAmount,
+    interestRate,
+    stressRateHike,
+    isStressTestEnabled,
+    loanTermYears,
+    repaymentType,
+    metrics.baseMonthlyPayment,
   ]);
 
   // Amortisation Schedule Calculation for Recharts Graph
   const amortisationData = useMemo(() => {
     if (loanAmount <= 0) return { schedule: [], crossoverYear: null, fiveYearEquity: 0, tenYearEquity: 0 };
 
-    const monthlyRate = interestRate / 100 / 12;
+    const effectiveRate = applyStressToAmortisation && isStressTestEnabled && stressRateHike > 0
+      ? interestRate + stressRateHike
+      : interestRate;
+
+    const monthlyRate = effectiveRate / 100 / 12;
     const totalMonths = loanTermYears * 12;
 
     let baseMonthlyPayment = 0;
@@ -359,7 +491,16 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
     }
 
     return { schedule, crossoverYear, fiveYearEquity, tenYearEquity };
-  }, [loanAmount, interestRate, loanTermYears, repaymentType, extraRepaymentMonthly]);
+  }, [
+    loanAmount,
+    interestRate,
+    loanTermYears,
+    repaymentType,
+    extraRepaymentMonthly,
+    applyStressToAmortisation,
+    isStressTestEnabled,
+    stressRateHike,
+  ]);
 
   // Specific data point on the timeline selected by user scrubber
   const inspectedYearData = useMemo(() => {
@@ -394,12 +535,77 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
     setRepaymentType('pi');
     setRepaymentFrequency('monthly');
     setExtraRepaymentMonthly(0);
+    setStressRateHike(0);
+    setIsStressTestEnabled(false);
+    setApplyStressToAmortisation(false);
   };
 
   const formatCurrencyAxis = (val: number) => {
     if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
     if (val >= 1000) return `$${Math.round(val / 1000)}k`;
     return `$${val}`;
+  };
+
+  const CustomStressTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ name: string; value: number; color?: string; fill?: string; payload?: any }>;
+    label?: string;
+  }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0]?.payload;
+      if (!data) return null;
+      return (
+        <div className="bg-neutral-900/95 text-white p-3.5 rounded-xl border border-neutral-700 shadow-2xl backdrop-blur-md text-xs min-w-[220px] space-y-2">
+          <div className="border-b border-neutral-800 pb-1.5 flex items-center justify-between">
+            <div className="font-bold text-amber-400 flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
+              <span>{data.hike === 0 ? 'Base Interest Rate' : `+${data.hike.toFixed(2)}% Rate Hike`}</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 font-mono">
+              {data.rate.toFixed(2)}% p.a.
+            </span>
+          </div>
+
+          <div className="space-y-1.5 text-xs">
+            <div className="flex items-center justify-between text-neutral-300">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <span>Base Monthly Payment:</span>
+              </span>
+              <span className="font-bold text-white tabular-nums">${data.basePayment.toLocaleString()}</span>
+            </div>
+            {data.extraPayment > 0 && (
+              <div className="flex items-center justify-between text-amber-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  <span>Hike Increase / Mo:</span>
+                </span>
+                <span className="font-extrabold tabular-nums">+${data.extraPayment.toLocaleString()}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-1 border-t border-neutral-800 font-extrabold">
+              <span className="text-[#FFD200]">Total Monthly Repayment:</span>
+              <span className="text-sm text-[#FFD200] tabular-nums">${data.totalMonthlyPayment.toLocaleString()}</span>
+            </div>
+            {data.annualExtra > 0 && (
+              <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-0.5">
+                <span>Annual Cashflow Surge:</span>
+                <span className="tabular-nums text-neutral-300">+${data.annualExtra.toLocaleString()} / yr</span>
+              </div>
+            )}
+            {data.isApraBuffer && (
+              <div className="text-[10px] text-indigo-300 font-bold bg-indigo-950/70 p-1.5 rounded border border-indigo-800 mt-1">
+                APRA +3.00% regulatory buffer benchmark
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   const CustomScheduleTooltip = ({
@@ -444,6 +650,73 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
     return null;
   };
 
+  const handleDownloadScheduleCSV = () => {
+    const headers = [
+      'Year',
+      'Starting Balance ($)',
+      'Annual Principal Paid ($)',
+      'Annual Interest Paid ($)',
+      'Total Annual Repayment ($)',
+      'Principal Share (%)',
+      'Interest Share (%)',
+      'Cumulative Principal ($)',
+      'Cumulative Interest ($)',
+      'Remaining Loan Balance ($)',
+      'Home Equity (%)',
+    ];
+
+    const validRows = amortisationData.schedule.filter((r) => r.year > 0);
+    const rows = validRows.map((row, idx) => {
+      const startingBal = idx === 0 ? loanAmount : validRows[idx - 1].remainingBalance;
+      const annualTotal = row.principalPaid + row.interestPaid;
+      return [
+        `Year ${row.year}`,
+        startingBal,
+        row.principalPaid,
+        row.interestPaid,
+        annualTotal,
+        `${row.principalShare}%`,
+        `${row.interestShare}%`,
+        row.cumulativePrincipal,
+        row.cumulativeInterest,
+        row.remainingBalance,
+        `${row.equityPercent}%`,
+      ].join(',');
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `RayWhite_Amortisation_Schedule_${loanTermYears}Yr.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const displayedScheduleRows = useMemo(() => {
+    const allValid = amortisationData.schedule.filter((r) => r.year > 0);
+    let filtered = allValid;
+
+    if (tableFilterMode === 'milestones') {
+      const milestoneYears = new Set([1, 2, 3, 5, 10, 15, 20, 25, 30, loanTermYears]);
+      if (amortisationData.crossoverYear) milestoneYears.add(amortisationData.crossoverYear);
+      filtered = allValid.filter((r) => milestoneYears.has(r.year) || r.remainingBalance === 0);
+    }
+
+    if (tableSearchQuery.trim()) {
+      const q = tableSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (r) =>
+          r.year.toString().includes(q) ||
+          r.yearLabel.toLowerCase().includes(q) ||
+          (amortisationData.crossoverYear === r.year && 'crossover'.includes(q))
+      );
+    }
+
+    return filtered;
+  }, [amortisationData, tableFilterMode, tableSearchQuery, loanTermYears]);
+
   const calculatorBody = (
     <div className="space-y-6">
       {/* Top Header */}
@@ -468,15 +741,29 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* Reset Button - Rose Red Accent */}
           <button
             type="button"
             onClick={resetToOriginal}
-            className="px-2.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-950 bg-neutral-100 hover:bg-neutral-200 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-2.5 py-1.5 text-xs font-bold text-rose-700 hover:text-rose-950 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
             title="Reset to listing defaults"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
             <span>Reset</span>
           </button>
+
+          {/* Compare 2 Rates Side-by-Side Shortcut - Bold Crimson Red Theme */}
+          {onOpenRateCompare && (
+            <button
+              type="button"
+              onClick={onOpenRateCompare}
+              className="px-3 py-1.5 text-xs font-black text-white bg-red-600 hover:bg-red-700 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-sm shadow-red-600/20 active:scale-95 border border-red-500"
+              title="Compare side-by-side with another interest rate"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 text-white" />
+              <span className="hidden sm:inline">Compare 2 Rates</span>
+            </button>
+          )}
 
           {isOpenModal && onCloseModal && (
             <button
@@ -575,20 +862,23 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
               </span>
             </div>
 
-            {/* Quick Percentage Presets */}
+            {/* Quick Percentage Presets - Each with distinct theme color */}
             <div className="grid grid-cols-4 gap-2">
-              {[10, 20, 25, 30].map((pct) => (
+              {[
+                { pct: 10, active: 'bg-blue-600 text-white font-black shadow-xs ring-1 ring-blue-400', inactive: 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100' },
+                { pct: 20, active: 'bg-emerald-600 text-white font-black shadow-xs ring-1 ring-emerald-400', inactive: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' },
+                { pct: 25, active: 'bg-red-600 text-white font-black shadow-xs ring-1 ring-red-400', inactive: 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100' },
+                { pct: 30, active: 'bg-indigo-600 text-white font-black shadow-xs ring-1 ring-indigo-400', inactive: 'bg-indigo-50 text-indigo-800 border-indigo-200 hover:bg-indigo-100' },
+              ].map((item) => (
                 <button
-                  key={pct}
+                  key={item.pct}
                   type="button"
-                  onClick={() => handlePercentChange(pct)}
-                  className={`py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                    depositPercent === pct
-                      ? 'bg-neutral-950 text-[#FFD200] border-neutral-950 shadow-2xs'
-                      : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                  onClick={() => handlePercentChange(item.pct)}
+                  className={`py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                    depositPercent === item.pct ? item.active : item.inactive
                   }`}
                 >
-                  {pct}% Deposit
+                  {item.pct}% Deposit
                 </button>
               ))}
             </div>
@@ -635,7 +925,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   max={15}
                   value={interestRate}
                   onChange={(e) => setInterestRate(Math.max(0.1, Number(e.target.value)))}
-                  className="w-full bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-2 text-sm font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#FFD200]"
+                  className="w-full bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-2 text-sm font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs pointer-events-none">
                   %
@@ -648,25 +938,25 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 step={0.05}
                 value={interestRate}
                 onChange={(e) => setInterestRate(Number(e.target.value))}
-                className="flex-1 accent-[#FFD200] cursor-pointer"
+                className="flex-1 accent-blue-600 cursor-pointer"
               />
             </div>
 
-            {/* Benchmark Market Rate Presets */}
+            {/* Benchmark Market Rate Presets - Distinct Blue, Green, Red themes */}
             <div className="flex flex-wrap gap-1.5 pt-1">
               {[
-                { label: 'Current Variable', rate: 5.85 },
-                { label: '3-Yr Fixed', rate: 5.39 },
-                { label: 'Investor Variable', rate: 6.15 },
+                { label: 'Current Variable', rate: 5.85, active: 'bg-blue-600 text-white font-black shadow-xs', inactive: 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100' },
+                { label: '3-Yr Fixed', rate: 5.39, active: 'bg-emerald-600 text-white font-black shadow-xs', inactive: 'bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100' },
+                { label: 'Investor Variable', rate: 6.15, active: 'bg-red-600 text-white font-black shadow-xs', inactive: 'bg-red-50 text-red-900 border-red-200 hover:bg-red-100' },
               ].map((bench) => (
                 <button
                   key={bench.label}
                   type="button"
                   onClick={() => setInterestRate(bench.rate)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                     interestRate === bench.rate
-                      ? 'bg-amber-100 text-amber-950 border-amber-300 font-bold'
-                      : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                      ? bench.active
+                      : bench.inactive
                   }`}
                 >
                   {bench.label} ({bench.rate}%)
@@ -675,7 +965,168 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
             </div>
           </div>
 
-          {/* 4. Loan Term & Repayment Type */}
+          {/* Rate Hike Stress-Test Slider Card (APRA Buffer Simulator) */}
+          <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-rose-500/10 p-4 rounded-xl border border-amber-300 shadow-2xs space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-neutral-900 text-[#FFD200] rounded-lg shrink-0">
+                  <TrendingUp className="w-4 h-4 font-bold" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-black text-neutral-900 uppercase tracking-wider">
+                      Rate Hike Stress-Test
+                    </label>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                      Buffer Simulator
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5">
+                    Test your monthly budget against potential RBA interest rate hikes.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setGraphView('stress');
+                  const el = document.getElementById('timeline-chart-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }}
+                className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-neutral-900 bg-amber-200/90 hover:bg-amber-300 px-2.5 py-1 rounded-md transition-colors cursor-pointer border border-amber-300 shadow-2xs"
+                title="View dynamic monthly payment chart"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>View Chart</span>
+              </button>
+            </div>
+
+            {/* Slider & Dynamic Display */}
+            <div className="space-y-2 pt-0.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xs text-neutral-600 font-semibold">Simulated Hike:</span>
+                  <span className="text-lg font-black text-neutral-950 tabular-nums">
+                    +{stressRateHike.toFixed(2)}%
+                  </span>
+                  <span className="text-xs text-neutral-500">
+                    (Stressed: <strong className="text-neutral-900 font-bold">{metrics.stressedInterestRate}% p.a.</strong>)
+                  </span>
+                </div>
+                <span
+                  className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                    stressRateHike === 0
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : stressRateHike <= 1.0
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                      : stressRateHike <= 2.5
+                      ? 'bg-orange-100 text-orange-950 border border-orange-300'
+                      : 'bg-rose-100 text-rose-950 border border-rose-300'
+                  }`}
+                >
+                  {stressRateHike === 0
+                    ? 'Current Baseline'
+                    : stressRateHike <= 1.0
+                    ? 'Mild (+1 to 4 Hikes)'
+                    : stressRateHike <= 2.5
+                    ? 'Moderate to High'
+                    : 'APRA 3% Buffer Tested'}
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min={0}
+                max={4.0}
+                step={0.1}
+                value={stressRateHike}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setStressRateHike(val);
+                  setIsStressTestEnabled(true);
+                }}
+                className="w-full accent-amber-500 cursor-pointer"
+              />
+
+              {/* Preset Quick Buttons - Distinct Blue, Green, Red themes */}
+              <div className="grid grid-cols-5 gap-1.5 pt-1">
+                {[
+                  { label: '0.0%', hike: 0, sub: 'Base', active: 'bg-blue-600 text-white border-blue-600 font-black shadow-xs ring-1 ring-blue-400', inactive: 'bg-blue-50/80 hover:bg-blue-100 text-blue-900 border-blue-200' },
+                  { label: '+0.5%', hike: 0.5, sub: '2 hikes', active: 'bg-emerald-600 text-white border-emerald-600 font-black shadow-xs ring-1 ring-emerald-400', inactive: 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 border-emerald-200' },
+                  { label: '+1.0%', hike: 1.0, sub: '4 hikes', active: 'bg-teal-600 text-white border-teal-600 font-black shadow-xs ring-1 ring-teal-400', inactive: 'bg-teal-50/80 hover:bg-teal-100 text-teal-900 border-teal-200' },
+                  { label: '+2.0%', hike: 2.0, sub: 'Severe', active: 'bg-red-600 text-white border-red-600 font-black shadow-xs ring-1 ring-red-400', inactive: 'bg-red-50/80 hover:bg-red-100 text-red-900 border-red-200' },
+                  { label: '+3.0%', hike: 3.0, sub: 'APRA', active: 'bg-rose-700 text-white border-rose-700 font-black shadow-xs ring-1 ring-rose-400', inactive: 'bg-rose-50/80 hover:bg-rose-100 text-rose-900 border-rose-200' },
+                ].map((preset) => {
+                  const isSelected = Math.abs(stressRateHike - preset.hike) < 0.05;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        setStressRateHike(preset.hike);
+                        setIsStressTestEnabled(true);
+                      }}
+                      className={`py-1.5 px-1 rounded-xl text-center border transition-all cursor-pointer ${
+                        isSelected ? preset.active : preset.inactive
+                      }`}
+                    >
+                      <div className="text-[11px] font-bold leading-tight">{preset.label}</div>
+                      <div className="text-[9px] font-medium leading-tight opacity-90">{preset.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Impact Metric Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-white/90 rounded-lg border border-amber-200 text-xs">
+              <div>
+                <div className="text-[10px] text-neutral-500 uppercase font-bold">Extra Monthly Cost</div>
+                <div className="text-sm font-extrabold text-rose-600 tabular-nums">
+                  {metrics.monthlyHikeDelta > 0 ? `+$${metrics.monthlyHikeDelta.toLocaleString()}/mo` : '$0/mo'}
+                </div>
+                <div className="text-[10px] text-neutral-500">
+                  {metrics.hikePercentageIncrease > 0 ? `+${metrics.hikePercentageIncrease.toFixed(1)}% monthly jump` : 'Baseline payment'}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] text-neutral-500 uppercase font-bold">Annual Cashflow Impact</div>
+                <div className="text-sm font-extrabold text-neutral-900 tabular-nums">
+                  {metrics.annualHikeDelta > 0 ? `+$${metrics.annualHikeDelta.toLocaleString()}/yr` : '$0/yr'}
+                </div>
+                <div className="text-[10px] text-neutral-500">
+                  ${Math.round(metrics.annualHikeDelta / 52).toLocaleString()} extra / week
+                </div>
+              </div>
+
+              <div className="col-span-2 sm:col-span-1">
+                <div className="text-[10px] text-neutral-500 uppercase font-bold">Lifetime Interest Surge</div>
+                <div className="text-sm font-extrabold text-amber-700 tabular-nums">
+                  {metrics.extraLifetimeInterestFromHike > 0 ? `+$${formatCurrencyAxis(metrics.extraLifetimeInterestFromHike)}` : '$0'}
+                </div>
+                <div className="text-[10px] text-neutral-500">Over {loanTermYears} yrs</div>
+              </div>
+            </div>
+
+            {/* Toggle to apply stress to full amortization schedule */}
+            <div className="flex items-center justify-between pt-1 text-xs text-neutral-700">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={applyStressToAmortisation}
+                  onChange={(e) => setApplyStressToAmortisation(e.target.checked)}
+                  className="rounded text-amber-600 focus:ring-amber-500 h-3.5 w-3.5 cursor-pointer accent-amber-500"
+                />
+                <span className="text-[11px] font-semibold text-neutral-700">
+                  Apply +{stressRateHike.toFixed(2)}% hike to 30-year lifetime amortization charts
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* 4. Loan Term & Repayment Type - Distinct Blue, Green, Red themes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Loan Term */}
             <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-2xs space-y-2">
@@ -683,18 +1134,21 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 Loan Term
               </label>
               <div className="grid grid-cols-4 gap-1.5">
-                {[15, 20, 25, 30].map((yrs) => (
+                {[
+                  { yrs: 15, active: 'bg-blue-600 text-white font-black shadow-xs ring-1 ring-blue-400', inactive: 'bg-blue-50 text-blue-800 hover:bg-blue-100' },
+                  { yrs: 20, active: 'bg-emerald-600 text-white font-black shadow-xs ring-1 ring-emerald-400', inactive: 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100' },
+                  { yrs: 25, active: 'bg-red-600 text-white font-black shadow-xs ring-1 ring-red-400', inactive: 'bg-red-50 text-red-800 hover:bg-red-100' },
+                  { yrs: 30, active: 'bg-slate-900 text-white font-black shadow-xs ring-1 ring-slate-400', inactive: 'bg-slate-100 text-slate-800 hover:bg-slate-200' },
+                ].map((item) => (
                   <button
-                    key={yrs}
+                    key={item.yrs}
                     type="button"
-                    onClick={() => setLoanTermYears(yrs)}
-                    className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                      loanTermYears === yrs
-                        ? 'bg-neutral-950 text-[#FFD200] border-neutral-950 shadow-2xs'
-                        : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                    onClick={() => setLoanTermYears(item.yrs)}
+                    className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                      loanTermYears === item.yrs ? item.active : item.inactive
                     }`}
                   >
-                    {yrs}y
+                    {item.yrs}y
                   </button>
                 ))}
               </div>
@@ -709,10 +1163,10 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 <button
                   type="button"
                   onClick={() => setRepaymentType('pi')}
-                  className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                  className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                     repaymentType === 'pi'
-                      ? 'bg-neutral-950 text-[#FFD200] border-neutral-950 shadow-2xs'
-                      : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                      ? 'bg-blue-600 text-white font-black border-blue-600 shadow-xs ring-1 ring-blue-400'
+                      : 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100'
                   }`}
                 >
                   Principal &amp; Interest
@@ -720,10 +1174,10 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 <button
                   type="button"
                   onClick={() => setRepaymentType('io')}
-                  className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                  className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                     repaymentType === 'io'
-                      ? 'bg-neutral-950 text-[#FFD200] border-neutral-950 shadow-2xs'
-                      : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                      ? 'bg-red-600 text-white font-black border-red-600 shadow-xs ring-1 ring-red-400'
+                      : 'bg-red-50 text-red-900 border-red-200 hover:bg-red-100'
                   }`}
                 >
                   Interest Only
@@ -820,32 +1274,59 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
               </span>
             </div>
 
-            {/* Frequency Selector */}
-            <div className="grid grid-cols-3 gap-1 bg-neutral-900 p-1 rounded-xl border border-neutral-800 text-xs font-semibold">
-              {(['monthly', 'fortnightly', 'weekly'] as const).map((freq) => (
+            {/* Frequency Selector - Blue, Green, Red themes */}
+            <div className="grid grid-cols-3 gap-1 bg-neutral-900 p-1 rounded-xl border border-neutral-800 text-xs font-semibold shadow-inner">
+              {[
+                { freq: 'monthly' as const, label: 'Monthly', active: 'bg-blue-600 text-white font-black shadow-xs ring-1 ring-blue-400', inactive: 'text-blue-300 hover:text-white hover:bg-blue-600/30' },
+                { freq: 'fortnightly' as const, label: 'Fortnightly', active: 'bg-emerald-600 text-white font-black shadow-xs ring-1 ring-emerald-400', inactive: 'text-emerald-300 hover:text-white hover:bg-emerald-600/30' },
+                { freq: 'weekly' as const, label: 'Weekly', active: 'bg-red-600 text-white font-black shadow-xs ring-1 ring-red-400', inactive: 'text-red-300 hover:text-white hover:bg-red-600/30' },
+              ].map((item) => (
                 <button
-                  key={freq}
+                  key={item.freq}
                   type="button"
-                  onClick={() => setRepaymentFrequency(freq)}
+                  onClick={() => setRepaymentFrequency(item.freq)}
                   className={`py-1.5 rounded-lg transition-all capitalize cursor-pointer ${
-                    repaymentFrequency === freq
-                      ? 'bg-[#FFD200] text-neutral-950 font-bold'
-                      : 'text-neutral-400 hover:text-white'
+                    repaymentFrequency === item.freq
+                      ? item.active
+                      : item.inactive
                   }`}
                 >
-                  {freq}
+                  {item.label}
                 </button>
               ))}
             </div>
 
             {/* Hero Big Payment Figure */}
-            <div className="text-center py-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
+            <div className="text-center py-3 bg-neutral-900/90 rounded-xl border border-neutral-800 space-y-1.5">
               <div className="text-3xl sm:text-4xl font-extrabold text-[#FFD200] tracking-tight tabular-nums">
-                ${metrics.activePeriodicRepayment.toLocaleString()}
+                ${(isStressTestEnabled && stressRateHike > 0
+                  ? metrics.stressedActivePeriodicRepayment
+                  : metrics.activePeriodicRepayment
+                ).toLocaleString()}
               </div>
-              <div className="text-xs text-neutral-400 mt-1 capitalize font-medium">
-                per {repaymentFrequency === 'fortnightly' ? 'fortnight' : repaymentFrequency === 'weekly' ? 'week' : 'month'}
+              <div className="text-xs text-neutral-400 capitalize font-medium flex items-center justify-center gap-1.5 flex-wrap">
+                <span>
+                  per {repaymentFrequency === 'fortnightly' ? 'fortnight' : repaymentFrequency === 'weekly' ? 'week' : 'month'}
+                </span>
+                {isStressTestEnabled && stressRateHike > 0 && (
+                  <span className="text-amber-400 font-bold">
+                    (at {metrics.stressedInterestRate}% p.a.)
+                  </span>
+                )}
               </div>
+
+              {/* Stress-Test Delta Banner */}
+              {isStressTestEnabled && stressRateHike > 0 && metrics.periodicHikeDelta > 0 && (
+                <div className="pt-2 mt-1 border-t border-neutral-800 flex flex-wrap items-center justify-center gap-2 text-xs">
+                  <span className="text-neutral-400 text-[11px]">
+                    Base: ${metrics.activePeriodicRepayment.toLocaleString()}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-[11px] flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-rose-400" />
+                    <span>+${metrics.periodicHikeDelta.toLocaleString()} (+{metrics.hikePercentageIncrease.toFixed(1)}%)</span>
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Breakdown Table */}
@@ -857,15 +1338,31 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 </span>
               </div>
               <div className="flex items-center justify-between text-neutral-300">
-                <span>Total Interest Payable:</span>
+                <span>
+                  Total Interest {isStressTestEnabled && stressRateHike > 0 ? `(at ${metrics.stressedInterestRate}%)` : `(at ${interestRate}%)`}:
+                </span>
                 <span className="font-extrabold text-amber-400 tabular-nums">
-                  ${metrics.totalInterest.toLocaleString()}
+                  ${(isStressTestEnabled && stressRateHike > 0
+                    ? metrics.stressedTotalInterest
+                    : metrics.totalInterest
+                  ).toLocaleString()}
                 </span>
               </div>
+              {isStressTestEnabled && stressRateHike > 0 && metrics.extraLifetimeInterestFromHike > 0 && (
+                <div className="flex items-center justify-between text-rose-300 text-[11px]">
+                  <span>Extra Interest from Rate Hike:</span>
+                  <span className="font-extrabold tabular-nums">
+                    +${metrics.extraLifetimeInterestFromHike.toLocaleString()}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-neutral-300">
                 <span>Total Loan Cost (Over {loanTermYears} yrs):</span>
                 <span className="font-extrabold text-white tabular-nums">
-                  ${metrics.totalPayments.toLocaleString()}
+                  ${(isStressTestEnabled && stressRateHike > 0
+                    ? metrics.stressedTotalPayments
+                    : metrics.totalPayments
+                  ).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -1047,6 +1544,23 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
           <div className="flex flex-wrap items-center gap-1 bg-neutral-100 p-1 rounded-xl self-start md:self-auto text-xs font-bold">
             <button
               type="button"
+              onClick={() => setGraphView('stress')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                graphView === 'stress'
+                  ? 'bg-neutral-900 text-[#FFD200] shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-rose-400" />
+              <span>Rate Hike Stress Chart</span>
+              {stressRateHike > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-400 text-neutral-950 font-black">
+                  +{stressRateHike.toFixed(1)}%
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => setGraphView('annual')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 graphView === 'annual'
@@ -1139,155 +1653,336 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
           </div>
         </div>
 
-        {/* Interactive Timeline Scrubber & Year Inspection */}
-        <div className="p-4 sm:p-5 bg-neutral-950 text-white rounded-2xl border border-neutral-800 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#FFD200]" />
-                <span className="text-xs uppercase font-extrabold tracking-wider text-neutral-300">
-                  Interactive Timeline Scrubber
+        {/* Interactive Control Panel: Rate Hike Stress Simulator or Timeline Year Inspection */}
+        {graphView === 'stress' ? (
+          <div className="p-4 sm:p-5 bg-neutral-950 text-white rounded-2xl border border-neutral-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[#FFD200]" />
+                  <span className="text-xs uppercase font-extrabold tracking-wider text-neutral-300">
+                    Live Monthly Payment Hike Simulator
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-neutral-950 font-black">
+                    Interactive Slider
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Drag the rate hike slider to visually observe the payment jump across all scenarios in the chart below.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="text-xs text-neutral-400">Tested Hike:</span>
+                <span className="px-2.5 py-1 rounded-lg bg-[#FFD200] text-neutral-950 font-black text-xs font-mono shadow-xs">
+                  +{stressRateHike.toFixed(2)}% ({metrics.stressedInterestRate}% p.a.)
                 </span>
               </div>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Drag the timeline slider or select a milestone to see how payments evolve over the {loanTermYears}-year lifecycle.
-              </p>
             </div>
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="text-xs text-neutral-400">Timeline Year:</span>
-              <span className="px-2.5 py-1 rounded-lg bg-[#FFD200] text-neutral-950 font-black text-xs font-mono shadow-xs">
-                Year {inspectedYearData?.year || inspectYear} of {loanTermYears}
-              </span>
-            </div>
-          </div>
 
-          {/* Slider */}
-          <div className="space-y-1.5">
-            <input
-              type="range"
-              min={1}
-              max={loanTermYears}
-              step={1}
-              value={inspectYear}
-              onChange={(e) => setInspectYear(Number(e.target.value))}
-              className="w-full accent-[#FFD200] cursor-pointer"
-            />
-            <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-              <span>Year 1 (Loan Inception)</span>
-              {amortisationData.crossoverYear && amortisationData.crossoverYear <= loanTermYears && (
-                <span className="text-[#FFD200] font-bold">
-                  Yr {amortisationData.crossoverYear} (Crossover Point)
-                </span>
-              )}
-              <span>Year {loanTermYears} (100% Paid Off)</span>
+            {/* Slider */}
+            <div className="space-y-1.5">
+              <input
+                type="range"
+                min={0}
+                max={4.0}
+                step={0.1}
+                value={stressRateHike}
+                onChange={(e) => {
+                  setStressRateHike(Number(e.target.value));
+                  setIsStressTestEnabled(true);
+                }}
+                className="w-full accent-[#FFD200] cursor-pointer"
+              />
+              <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
+                <span>0.0% (Current Base {interestRate}% p.a.)</span>
+                <span className="text-indigo-400 font-bold">+3.00% (APRA Regulatory Buffer)</span>
+                <span>+4.00% (High Stress)</span>
+              </div>
             </div>
-          </div>
 
-          {/* Quick Milestone Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {[
-              { year: 1, label: 'Yr 1: Initial Loan' },
-              { year: 5, label: 'Yr 5: Early Equity' },
-              { year: 10, label: 'Yr 10: Building' },
-              ...(amortisationData.crossoverYear
-                ? [{ year: amortisationData.crossoverYear, label: `Yr ${amortisationData.crossoverYear}: Crossover ⚡` }]
-                : []),
-              { year: Math.min(loanTermYears, 20), label: `Yr ${Math.min(loanTermYears, 20)}: Paydown` },
-              { year: loanTermYears, label: `Yr ${loanTermYears}: Debt-Free 🎉` },
-            ]
-              .filter((v, i, a) => a.findIndex((t) => t.year === v.year) === i && v.year <= loanTermYears)
-              .map((m) => (
+            {/* Quick Hike Presets */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { hike: 0, label: '0.0%: Base Rate' },
+                { hike: 0.5, label: '+0.50%: Mild (2 hikes)' },
+                { hike: 1.0, label: '+1.00%: Moderate (4 hikes)' },
+                { hike: 1.5, label: '+1.50%: Significant' },
+                { hike: 2.0, label: '+2.00%: Severe' },
+                { hike: 3.0, label: '🏛️ +3.00%: APRA Buffer Test' },
+                { hike: 4.0, label: '+4.00%: Max Stress' },
+              ].map((m) => (
                 <button
-                  key={m.year}
+                  key={m.hike}
                   type="button"
-                  onClick={() => setInspectYear(m.year)}
+                  onClick={() => {
+                    setStressRateHike(m.hike);
+                    setIsStressTestEnabled(true);
+                  }}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                    inspectYear === m.year
-                      ? 'bg-[#FFD200] text-neutral-950 shadow-xs'
+                    Math.abs(stressRateHike - m.hike) < 0.05
+                      ? 'bg-[#FFD200] text-neutral-950 shadow-xs font-black'
                       : 'bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 border border-neutral-800'
                   }`}
                 >
                   {m.label}
                 </button>
               ))}
-          </div>
+            </div>
 
-          {/* Year Data Breakdown Card */}
-          {inspectedYearData && (
+            {/* Live Scenario Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-neutral-800 text-xs">
               <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
-                <div className="text-[10px] uppercase font-bold text-neutral-400">Principal in Yr {inspectedYearData.year}</div>
-                <div className="text-base font-black text-emerald-400 mt-0.5 tabular-nums">
-                  ${inspectedYearData.principalPaid.toLocaleString()}
-                </div>
-                <div className="text-[10px] text-emerald-300 font-semibold mt-0.5">
-                  {inspectedYearData.principalShare}% of Year {inspectedYearData.year} repayment
-                </div>
-              </div>
-
-              <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
-                <div className="text-[10px] uppercase font-bold text-neutral-400">Interest in Yr {inspectedYearData.year}</div>
-                <div className="text-base font-black text-amber-400 mt-0.5 tabular-nums">
-                  ${inspectedYearData.interestPaid.toLocaleString()}
-                </div>
-                <div className="text-[10px] text-amber-300 font-semibold mt-0.5">
-                  {inspectedYearData.interestShare}% of Year {inspectedYearData.year} repayment
-                </div>
-              </div>
-
-              <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
-                <div className="text-[10px] uppercase font-bold text-neutral-400">Remaining Balance</div>
-                <div className="text-base font-black text-blue-400 mt-0.5 tabular-nums">
-                  ${inspectedYearData.remainingBalance.toLocaleString()}
+                <div className="text-[10px] uppercase font-bold text-neutral-400">Base Monthly Repayment</div>
+                <div className="text-base font-black text-white mt-0.5 tabular-nums">
+                  ${metrics.baseMonthlyPayment.toLocaleString()}
                 </div>
                 <div className="text-[10px] text-neutral-400 mt-0.5">
-                  Debt balance at year end
+                  At base {interestRate}% p.a.
                 </div>
               </div>
 
               <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
-                <div className="text-[10px] uppercase font-bold text-neutral-400">Cumulative Equity</div>
+                <div className="text-[10px] uppercase font-bold text-neutral-400">Stressed Monthly Repayment</div>
                 <div className="text-base font-black text-[#FFD200] mt-0.5 tabular-nums">
-                  {inspectedYearData.equityPercent}%
+                  ${metrics.stressedMonthlyPayment.toLocaleString()}
                 </div>
-                <div className="text-[10px] text-emerald-300 font-semibold mt-0.5">
-                  ${inspectedYearData.cumulativePrincipal.toLocaleString()} debt retired
+                <div className="text-[10px] text-amber-300 font-semibold mt-0.5">
+                  At stressed {metrics.stressedInterestRate}% p.a.
+                </div>
+              </div>
+
+              <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
+                <div className="text-[10px] uppercase font-bold text-neutral-400">Monthly Cashflow Impact</div>
+                <div className="text-base font-black text-rose-400 mt-0.5 tabular-nums">
+                  {metrics.monthlyHikeDelta > 0 ? `+$${metrics.monthlyHikeDelta.toLocaleString()}` : '$0'}
+                </div>
+                <div className="text-[10px] text-rose-300 font-semibold mt-0.5">
+                  {metrics.hikePercentageIncrease > 0 ? `+${metrics.hikePercentageIncrease.toFixed(1)}% jump` : 'Baseline'}
+                </div>
+              </div>
+
+              <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
+                <div className="text-[10px] uppercase font-bold text-neutral-400">Extra Annual Cost</div>
+                <div className="text-base font-black text-amber-400 mt-0.5 tabular-nums">
+                  {metrics.annualHikeDelta > 0 ? `+$${metrics.annualHikeDelta.toLocaleString()}` : '$0'}
+                </div>
+                <div className="text-[10px] text-neutral-400 mt-0.5">
+                  ${Math.round(metrics.annualHikeDelta / 52).toLocaleString()} / week
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Proportional Year Bar */}
-          {inspectedYearData && (
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-300">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                  <span>Year {inspectedYearData.year} Principal: {inspectedYearData.principalShare}%</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                  <span>Year {inspectedYearData.year} Interest: {inspectedYearData.interestShare}%</span>
-                </span>
+          </div>
+        ) : (
+          <div className="p-4 sm:p-5 bg-neutral-950 text-white rounded-2xl border border-neutral-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-[#FFD200]" />
+                  <span className="text-xs uppercase font-extrabold tracking-wider text-neutral-300">
+                    Interactive Timeline Scrubber
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Drag the timeline slider or select a milestone to see how payments evolve over the {loanTermYears}-year lifecycle.
+                </p>
               </div>
-              <div className="h-3 w-full bg-neutral-800 rounded-full overflow-hidden flex">
-                <div
-                  className="bg-emerald-400 h-full transition-all duration-300"
-                  style={{ width: `${inspectedYearData.principalShare}%` }}
-                />
-                <div
-                  className="bg-amber-400 h-full transition-all duration-300"
-                  style={{ width: `${inspectedYearData.interestShare}%` }}
-                />
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="text-xs text-neutral-400">Timeline Year:</span>
+                <span className="px-2.5 py-1 rounded-lg bg-[#FFD200] text-neutral-950 font-black text-xs font-mono shadow-xs">
+                  Year {inspectedYearData?.year || inspectYear} of {loanTermYears}
+                </span>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* RECHARTS AMORTISATION GRAPH */}
+            {/* Slider */}
+            <div className="space-y-1.5">
+              <input
+                type="range"
+                min={1}
+                max={loanTermYears}
+                step={1}
+                value={inspectYear}
+                onChange={(e) => setInspectYear(Number(e.target.value))}
+                className="w-full accent-[#FFD200] cursor-pointer"
+              />
+              <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
+                <span>Year 1 (Loan Inception)</span>
+                {amortisationData.crossoverYear && amortisationData.crossoverYear <= loanTermYears && (
+                  <span className="text-[#FFD200] font-bold">
+                    Yr {amortisationData.crossoverYear} (Crossover Point)
+                  </span>
+                )}
+                <span>Year {loanTermYears} (100% Paid Off)</span>
+              </div>
+            </div>
+
+            {/* Quick Milestone Buttons */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { year: 1, label: 'Yr 1: Initial Loan' },
+                { year: 5, label: 'Yr 5: Early Equity' },
+                { year: 10, label: 'Yr 10: Building' },
+                ...(amortisationData.crossoverYear
+                  ? [{ year: amortisationData.crossoverYear, label: `Yr ${amortisationData.crossoverYear}: Crossover ⚡` }]
+                  : []),
+                { year: Math.min(loanTermYears, 20), label: `Yr ${Math.min(loanTermYears, 20)}: Paydown` },
+                { year: loanTermYears, label: `Yr ${loanTermYears}: Debt-Free 🎉` },
+              ]
+                .filter((v, i, a) => a.findIndex((t) => t.year === v.year) === i && v.year <= loanTermYears)
+                .map((m) => (
+                  <button
+                    key={m.year}
+                    type="button"
+                    onClick={() => setInspectYear(m.year)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      inspectYear === m.year
+                        ? 'bg-[#FFD200] text-neutral-950 shadow-xs'
+                        : 'bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 border border-neutral-800'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+            </div>
+
+            {/* Year Data Breakdown Card */}
+            {inspectedYearData && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-neutral-800 text-xs">
+                <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
+                  <div className="text-[10px] uppercase font-bold text-neutral-400">Principal in Yr {inspectedYearData.year}</div>
+                  <div className="text-base font-black text-emerald-400 mt-0.5 tabular-nums">
+                    ${inspectedYearData.principalPaid.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-emerald-300 font-semibold mt-0.5">
+                    {inspectedYearData.principalShare}% of Year {inspectedYearData.year} repayment
+                  </div>
+                </div>
+
+                <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
+                  <div className="text-[10px] uppercase font-bold text-neutral-400">Interest in Yr {inspectedYearData.year}</div>
+                  <div className="text-base font-black text-amber-400 mt-0.5 tabular-nums">
+                    ${inspectedYearData.interestPaid.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-amber-300 font-semibold mt-0.5">
+                    {inspectedYearData.interestShare}% of Year {inspectedYearData.year} repayment
+                  </div>
+                </div>
+
+                <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
+                  <div className="text-[10px] uppercase font-bold text-neutral-400">Remaining Balance</div>
+                  <div className="text-base font-black text-blue-400 mt-0.5 tabular-nums">
+                    ${inspectedYearData.remainingBalance.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-neutral-400 mt-0.5">
+                    Debt balance at year end
+                  </div>
+                </div>
+
+                <div className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-800">
+                  <div className="text-[10px] uppercase font-bold text-neutral-400">Cumulative Equity</div>
+                  <div className="text-base font-black text-[#FFD200] mt-0.5 tabular-nums">
+                    {inspectedYearData.equityPercent}%
+                  </div>
+                  <div className="text-[10px] text-emerald-300 font-semibold mt-0.5">
+                    ${inspectedYearData.cumulativePrincipal.toLocaleString()} debt retired
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Proportional Year Bar */}
+            {inspectedYearData && (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-300">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                    <span>Year {inspectedYearData.year} Principal: {inspectedYearData.principalShare}%</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                    <span>Year {inspectedYearData.year} Interest: {inspectedYearData.interestShare}%</span>
+                  </span>
+                </div>
+                <div className="h-3 w-full bg-neutral-800 rounded-full overflow-hidden flex">
+                  <div
+                    className="bg-emerald-400 h-full transition-all duration-300"
+                    style={{ width: `${inspectedYearData.principalShare}%` }}
+                  />
+                  <div
+                    className="bg-amber-400 h-full transition-all duration-300"
+                    style={{ width: `${inspectedYearData.interestShare}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* RECHARTS AMORTISATION & STRESS GRAPH */}
         <div className="w-full h-[330px] pt-1">
           <ResponsiveContainer width="100%" height="100%">
-            {graphView === 'annual' ? (
+            {graphView === 'stress' ? (
+              <BarChart
+                data={stressCurveData}
+                margin={{ top: 20, right: 15, left: 10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis
+                  dataKey="hikeLabel"
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={formatCurrencyAxis}
+                />
+                <Tooltip content={<CustomStressTooltip />} />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: 12, paddingBottom: 8 }}
+                />
+                <ReferenceLine
+                  x="+3.00%"
+                  stroke="#6366f1"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  label={{
+                    value: '🏛️ APRA +3.00% Buffer Benchmark',
+                    fill: '#4f46e5',
+                    fontSize: 10,
+                    position: 'top',
+                  }}
+                />
+                <Bar
+                  name="Base Monthly Repayment"
+                  dataKey="basePayment"
+                  stackId="stress"
+                  fill="#0284c7"
+                  radius={[0, 0, 0, 0]}
+                />
+                <Bar
+                  name="Hike Additional Outlay"
+                  dataKey="extraPayment"
+                  stackId="stress"
+                  fill="#f59e0b"
+                  radius={[4, 4, 0, 0]}
+                >
+                  {stressCurveData.map((entry, index) => (
+                    <Cell
+                      key={`stress-cell-${index}`}
+                      fill={entry.isSelected ? '#ef4444' : entry.isApraBuffer ? '#6366f1' : '#f59e0b'}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            ) : graphView === 'annual' ? (
               <BarChart
                 data={amortisationData.schedule.filter((d) => d.year > 0)}
                 margin={{ top: 15, right: 15, left: 10, bottom: 0 }}
@@ -1540,87 +2235,405 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
           </ResponsiveContainer>
         </div>
 
-        {/* Educational Repayment Anatomy Box */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-700">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-neutral-900">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span>1. Early Years (Interest Heavy)</span>
+        {/* Educational Repayment & Stress Testing Anatomy Box */}
+        {graphView === 'stress' ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-700">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-neutral-900">
+                <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                <span>1. The APRA 3.00% Buffer Rule</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                Australian lenders assess loan serviceability at <strong>+3.00% above the product rate</strong> to ensure you can comfortably service the mortgage through monetary tightening cycles.
+              </p>
             </div>
-            <p className="text-[11px] text-neutral-500 leading-relaxed">
-              Because loan balance is highest initially, the bulk of every dollar covers interest. Principal balance decreases slowly at first.
-            </p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-neutral-900">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>2. Buffer Capacity Planning</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                At <strong>+{stressRateHike.toFixed(2)}%</strong> hike, payments increase by <strong>+${metrics.monthlyHikeDelta.toLocaleString()}/mo</strong>. Parking savings in an offset account shields you against rising rates.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-neutral-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>3. Hedging via Split or Fixed Loans</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                If market rate spikes concern your household cashflow, consider locking a 3-year fixed term or a 50/50 split loan for guaranteed repayment certainty.
+              </p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-neutral-900">
-              <span className="w-2 h-2 rounded-full bg-indigo-500" />
-              <span>2. The Crossover Milestone</span>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-700">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-neutral-900">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>1. Early Years (Interest Heavy)</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                Because loan balance is highest initially, the bulk of every dollar covers interest. Principal balance decreases slowly at first.
+              </p>
             </div>
-            <p className="text-[11px] text-neutral-500 leading-relaxed">
-              {amortisationData.crossoverYear ? (
-                <>At <strong>Year {amortisationData.crossoverYear}</strong>, payments flip: over 50% of each dollar directly builds home equity instead of bank interest.</>
-              ) : (
-                <>Principal repayments begin once the interest-only period ends.</>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-neutral-900">
+                <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                <span>2. The Crossover Milestone</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                {amortisationData.crossoverYear ? (
+                  <>At <strong>Year {amortisationData.crossoverYear}</strong>, payments flip: over 50% of each dollar directly builds home equity instead of bank interest.</>
+                ) : (
+                  <>Principal repayments begin once the interest-only period ends.</>
+                )}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-neutral-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>3. Accelerated Equity Paydown</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                In the final years, smaller debt yields minimal monthly interest, snowballing loan elimination to reach full 100% home ownership.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Detailed Amortization Table */}
+        <div className="pt-3 border-t border-neutral-200">
+          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-xs">
+            {/* Header & Controls Toolbar */}
+            <div className="p-4 sm:p-5 bg-neutral-50/80 border-b border-neutral-200 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-neutral-900 text-[#FFD200] flex items-center justify-center font-bold shadow-2xs shrink-0">
+                    <Table className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-extrabold text-sm sm:text-base text-neutral-900">
+                        Detailed Amortization Table
+                      </h4>
+                      <span className="text-[10px] font-bold bg-neutral-900 text-white px-2 py-0.5 rounded-full">
+                        Row-by-Row
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-500">
+                      Annual breakdown of principal &amp; interest payments, declining debt, and equity progression
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                  {/* Compare 2 Rates - Bold Crimson Red Theme */}
+                  {onOpenRateCompare && (
+                    <button
+                      type="button"
+                      onClick={onOpenRateCompare}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-xs shadow-red-600/20 transition-all cursor-pointer active:scale-95 border border-red-500"
+                      title="Compare this schedule side-by-side with another interest rate"
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-white" />
+                      <span>Compare 2 Rates Side-by-Side</span>
+                    </button>
+                  )}
+
+                  {/* Export CSV - Fresh Emerald Green Theme */}
+                  <button
+                    type="button"
+                    onClick={handleDownloadScheduleCSV}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs shadow-emerald-600/20 transition-all cursor-pointer active:scale-95 border border-emerald-500"
+                    title="Export complete schedule to CSV file"
+                  >
+                    <Download className="w-3.5 h-3.5 text-white" />
+                    <span>Export CSV</span>
+                  </button>
+
+                  {/* Collapse / Expand Table - Rose Red Accent */}
+                  <button
+                    type="button"
+                    onClick={() => setShowScheduleTable(!showScheduleTable)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95"
+                  >
+                    <span>{showScheduleTable ? 'Collapse Table' : 'Expand Table'}</span>
+                    {showScheduleTable ? <ChevronUp className="w-3.5 h-3.5 text-rose-600" /> : <ChevronDown className="w-3.5 h-3.5 text-rose-600" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter mode and search filter bar when table is open */}
+              {showScheduleTable && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-neutral-200/60">
+                  <div className="flex items-center gap-1.5 bg-neutral-200/70 p-1 rounded-xl text-xs font-semibold shrink-0 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() => setTableFilterMode('all')}
+                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                        tableFilterMode === 'all'
+                          ? 'bg-blue-600 text-white shadow-xs font-black ring-1 ring-blue-400'
+                          : 'text-blue-900 hover:bg-blue-100'
+                      }`}
+                    >
+                      All {loanTermYears} Years (Full Schedule)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTableFilterMode('milestones')}
+                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                        tableFilterMode === 'milestones'
+                          ? 'bg-emerald-600 text-white shadow-xs font-black ring-1 ring-emerald-400'
+                          : 'text-emerald-900 hover:bg-emerald-100'
+                      }`}
+                    >
+                      Key Milestones (5-Yr Intervals)
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1 sm:w-56">
+                      <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search year or keyword..."
+                        value={tableSearchQuery}
+                        onChange={(e) => setTableSearchQuery(e.target.value)}
+                        className="w-full text-xs pl-8 pr-2.5 py-1.5 bg-white border border-neutral-200 rounded-lg text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 placeholder:text-neutral-400"
+                      />
+                      {tableSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setTableSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 text-xs cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-neutral-500 font-medium whitespace-nowrap">
+                      {displayedScheduleRows.length} {displayedScheduleRows.length === 1 ? 'row' : 'rows'}
+                    </span>
+                  </div>
+                </div>
               )}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-neutral-900">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>3. Accelerated Equity Paydown</span>
             </div>
-            <p className="text-[11px] text-neutral-500 leading-relaxed">
-              In the final years, smaller debt yields minimal monthly interest, snowballing loan elimination to reach full 100% home ownership.
-            </p>
-          </div>
-        </div>
 
-        {/* Milestone Amortisation Schedule Table Toggle */}
-        <div className="pt-2 border-t border-neutral-100">
-          <button
-            type="button"
-            onClick={() => setShowScheduleTable(!showScheduleTable)}
-            className="w-full flex items-center justify-between text-xs font-bold text-neutral-700 hover:text-neutral-950 py-1 transition-colors cursor-pointer"
-          >
-            <span className="flex items-center gap-1.5">
-              <span>{showScheduleTable ? 'Hide' : 'View'} Milestone Schedule Breakdown</span>
-              <span className="text-[10px] text-neutral-400 font-normal">
-                (Yearly principal, interest, remaining debt &amp; equity %)
-              </span>
-            </span>
-            {showScheduleTable ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+            {/* Table Content */}
+            {showScheduleTable && (
+              <>
+                <div className="p-2.5 bg-amber-50/60 border-b border-amber-200/50 flex items-center justify-between text-[11px] text-amber-900">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold">💡 Interactive:</span>
+                    <span>Click any row to jump and sync the interactive repayment timeline chart above.</span>
+                  </div>
+                  {inspectYear && (
+                    <span className="font-semibold text-neutral-700 bg-white/80 px-2 py-0.5 rounded border border-amber-200 shrink-0">
+                      Active: <strong className="text-neutral-950">Year {inspectYear}</strong>
+                    </span>
+                  )}
+                </div>
 
-          {showScheduleTable && (
-            <div className="overflow-x-auto mt-2 pt-2 border-t border-neutral-100">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-neutral-50 text-neutral-600 font-bold border-b border-neutral-200">
-                  <tr>
-                    <th className="py-2 px-3">Timeline</th>
-                    <th className="py-2 px-3">Remaining Balance</th>
-                    <th className="py-2 px-3 text-emerald-700">Annual Principal</th>
-                    <th className="py-2 px-3 text-amber-700">Annual Interest</th>
-                    <th className="py-2 px-3">Total Cumulative Paid</th>
-                    <th className="py-2 px-3 text-right">Equity %</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 text-neutral-800">
-                  {amortisationData.schedule
-                    .filter((row) => [1, 2, 3, 5, 10, 15, 20, 25, 30].includes(row.year) || row.remainingBalance === 0)
-                    .map((row) => (
-                      <tr key={row.year} className="hover:bg-neutral-50 transition-colors">
-                        <td className="py-2 px-3 font-bold text-neutral-900">{row.yearLabel}</td>
-                        <td className="py-2 px-3 font-semibold tabular-nums">${row.remainingBalance.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-emerald-700 font-bold tabular-nums">${row.principalPaid.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-amber-700 font-bold tabular-nums">${row.interestPaid.toLocaleString()}</td>
-                        <td className="py-2 px-3 tabular-nums">${row.totalPaid.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-right font-extrabold text-emerald-700 tabular-nums">{row.equityPercent}%</td>
+                <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead className="bg-neutral-100 text-neutral-700 font-bold sticky top-0 z-10 border-b border-neutral-200 shadow-2xs">
+                      <tr>
+                        <th className="py-2.5 px-3 whitespace-nowrap">Year</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right">Starting Balance</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right text-emerald-700">
+                          Annual Principal
+                        </th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right text-amber-700">
+                          Annual Interest
+                        </th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right">Total Repayment</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap min-w-[130px]">Payment Split</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right text-emerald-800">
+                          Cumul. Principal
+                        </th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right text-amber-800">
+                          Cumul. Interest
+                        </th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right font-extrabold text-neutral-900">
+                          Ending Balance
+                        </th>
+                        <th className="py-2.5 px-3 whitespace-nowrap text-right">Home Equity</th>
                       </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100 text-neutral-800">
+                      {displayedScheduleRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} className="py-8 text-center text-neutral-400">
+                            No amortization data matching &quot;{tableSearchQuery}&quot;. Clear search filter to view all years.
+                          </td>
+                        </tr>
+                      ) : (
+                        displayedScheduleRows.map((row) => {
+                          const isInspected = inspectYear === row.year;
+                          const isCrossover = amortisationData.crossoverYear === row.year;
+                          const isDebtFree = row.remainingBalance === 0 || row.year === loanTermYears;
+                          const isStart = row.year === 1;
+
+                          // Compute starting balance for this year
+                          const prevRow = amortisationData.schedule.find((s) => s.year === row.year - 1);
+                          const startingBal = prevRow ? prevRow.remainingBalance : loanAmount;
+                          const annualTotal = row.principalPaid + row.interestPaid;
+
+                          return (
+                            <tr
+                              key={row.year}
+                              onClick={() => setInspectYear(row.year)}
+                              className={`cursor-pointer transition-colors ${
+                                isInspected
+                                  ? 'bg-[#FFD200]/20 font-medium'
+                                  : isCrossover
+                                  ? 'bg-purple-50/50 hover:bg-purple-50'
+                                  : 'hover:bg-neutral-50/90'
+                              }`}
+                            >
+                              {/* Year & Milestone Badges */}
+                              <td className="py-2.5 px-3 font-bold text-neutral-900 whitespace-nowrap">
+                                <div className="flex items-center gap-1.5">
+                                  <span>Year {row.year}</span>
+                                  {isStart && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                      Start
+                                    </span>
+                                  )}
+                                  {isCrossover && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 flex items-center gap-0.5 shadow-2xs">
+                                      ⚡ Crossover
+                                    </span>
+                                  )}
+                                  {isDebtFree && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 shadow-2xs">
+                                      🎉 Debt-Free
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Starting Balance */}
+                              <td className="py-2.5 px-3 text-right font-medium text-neutral-600 tabular-nums whitespace-nowrap">
+                                ${startingBal.toLocaleString()}
+                              </td>
+
+                              {/* Annual Principal Paid */}
+                              <td className="py-2.5 px-3 text-right text-emerald-700 font-bold tabular-nums whitespace-nowrap">
+                                ${row.principalPaid.toLocaleString()}
+                              </td>
+
+                              {/* Annual Interest Paid */}
+                              <td className="py-2.5 px-3 text-right text-amber-700 font-bold tabular-nums whitespace-nowrap">
+                                ${row.interestPaid.toLocaleString()}
+                              </td>
+
+                              {/* Total Annual Repayment */}
+                              <td className="py-2.5 px-3 text-right font-semibold text-neutral-900 tabular-nums whitespace-nowrap">
+                                ${annualTotal.toLocaleString()}
+                              </td>
+
+                              {/* Payment Split Visual Bar */}
+                              <td className="py-2.5 px-3 whitespace-nowrap">
+                                <div className="w-full min-w-[110px] space-y-1">
+                                  <div className="flex justify-between text-[10px] tabular-nums font-semibold">
+                                    <span className="text-emerald-700">{row.principalShare}% P</span>
+                                    <span className="text-amber-700">{row.interestShare}% I</span>
+                                  </div>
+                                  <div className="w-full h-1.5 bg-amber-200 rounded-full overflow-hidden flex">
+                                    <div
+                                      className="bg-emerald-500 h-full transition-all duration-300"
+                                      style={{ width: `${row.principalShare}%` }}
+                                      title={`Principal: ${row.principalShare}%`}
+                                    />
+                                    <div
+                                      className="bg-amber-500 h-full transition-all duration-300"
+                                      style={{ width: `${row.interestShare}%` }}
+                                      title={`Interest: ${row.interestShare}%`}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Cumulative Principal */}
+                              <td className="py-2.5 px-3 text-right text-emerald-800 font-medium tabular-nums whitespace-nowrap">
+                                ${row.cumulativePrincipal.toLocaleString()}
+                              </td>
+
+                              {/* Cumulative Interest */}
+                              <td className="py-2.5 px-3 text-right text-amber-800 font-medium tabular-nums whitespace-nowrap">
+                                ${row.cumulativeInterest.toLocaleString()}
+                              </td>
+
+                              {/* Ending Balance */}
+                              <td className="py-2.5 px-3 text-right font-bold text-neutral-900 tabular-nums whitespace-nowrap">
+                                ${row.remainingBalance.toLocaleString()}
+                              </td>
+
+                              {/* Equity % */}
+                              <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 tabular-nums">
+                                  {row.equityPercent}%
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                    {/* Summary Footer */}
+                    <tfoot className="bg-neutral-900 text-white font-bold sticky bottom-0 z-10 border-t-2 border-neutral-700 shadow-md">
+                      <tr>
+                        <td className="py-3 px-3 text-amber-400">Total Lifetime</td>
+                        <td className="py-3 px-3 text-right text-neutral-300 tabular-nums">
+                          ${loanAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3 text-right text-emerald-400 tabular-nums">
+                          $
+                          {amortisationData.schedule.length > 0
+                            ? amortisationData.schedule[amortisationData.schedule.length - 1].cumulativePrincipal.toLocaleString()
+                            : loanAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3 text-right text-amber-300 tabular-nums">
+                          $
+                          {amortisationData.schedule.length > 0
+                            ? amortisationData.schedule[amortisationData.schedule.length - 1].cumulativeInterest.toLocaleString()
+                            : '0'}
+                        </td>
+                        <td className="py-3 px-3 text-right text-white tabular-nums">
+                          $
+                          {amortisationData.schedule.length > 0
+                            ? amortisationData.schedule[amortisationData.schedule.length - 1].totalPaid.toLocaleString()
+                            : loanAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="text-[10px] text-neutral-300 font-normal">
+                            Full Term Paid Off
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right text-emerald-400 tabular-nums">
+                          ${loanAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3 text-right text-amber-300 tabular-nums">
+                          $
+                          {amortisationData.schedule.length > 0
+                            ? amortisationData.schedule[amortisationData.schedule.length - 1].cumulativeInterest.toLocaleString()
+                            : '0'}
+                        </td>
+                        <td className="py-3 px-3 text-right text-emerald-400 font-extrabold tabular-nums">
+                          $0
+                        </td>
+                        <td className="py-3 px-3 text-right text-emerald-400 font-extrabold tabular-nums">
+                          100%
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

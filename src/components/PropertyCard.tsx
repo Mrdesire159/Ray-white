@@ -295,27 +295,31 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
           )}
         </div>
 
-        {/* Save / Wishlist Button */}
+        {/* Save Heart Button on Image - Crimson Red */}
         <button
           type="button"
           onClick={handleHeartClick}
           aria-label={isSaved ? 'Remove from saved' : 'Save property'}
           title={isSaved ? 'In Saved Properties' : 'Save Property'}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-rose-600 backdrop-blur-xs transition-colors shadow-xs z-10 cursor-pointer"
+          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-xs transition-all shadow-xs z-10 cursor-pointer border ${
+            isSaved
+              ? 'bg-red-600 text-white border-red-500 scale-105'
+              : 'bg-white/95 hover:bg-rose-50 text-rose-600 border-rose-200'
+          }`}
         >
-          <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-500 text-rose-500' : ''}`} />
+          <Heart className={`w-4 h-4 ${isSaved ? 'fill-white text-white' : 'text-rose-600'}`} />
         </button>
 
-        {/* Compare Toggle Button on Image */}
+        {/* Compare Toggle Button on Image - Fresh Mint / Emerald Green */}
         <button
           type="button"
           onClick={handleCompareClick}
           aria-label={isCompared ? 'Remove from compare' : 'Add to compare'}
           title={isCompared ? 'Remove from Compare' : 'Add to Compare (max 3)'}
-          className={`absolute top-3 right-12 p-2 rounded-full backdrop-blur-xs transition-all shadow-xs z-10 cursor-pointer ${
+          className={`absolute top-3 right-12 p-2 rounded-full backdrop-blur-xs transition-all shadow-xs z-10 cursor-pointer border ${
             isCompared
-              ? 'bg-[#FFD200] text-neutral-950 font-bold scale-105'
-              : 'bg-white/90 hover:bg-white text-neutral-700 hover:text-neutral-950'
+              ? 'bg-emerald-600 text-white border-emerald-500 font-bold scale-105'
+              : 'bg-white/95 hover:bg-emerald-50 text-emerald-700 border-emerald-200'
           }`}
         >
           <Scale className="w-4 h-4" />
@@ -503,15 +507,16 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
           </div>
         </div>
 
-        {/* View Details, Tour Inside & Compare Action Buttons */}
+        {/* View Details (Crimson Red), Tour Inside (Oceanic Blue) & Compare (Emerald Green) Action Buttons */}
         <div className="mt-4 pt-3 flex items-center justify-between gap-1.5 border-t border-neutral-100">
+          {/* Compare Button - Fresh Mint / Emerald Green Theme */}
           <button
             type="button"
             onClick={handleCompareClick}
-            className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${
               isCompared
-                ? 'bg-amber-400 text-neutral-950 border-amber-400 font-black shadow-xs'
-                : 'bg-white text-neutral-700 border-neutral-200 hover:border-amber-300 hover:bg-amber-50/50'
+                ? 'bg-emerald-600 text-white border-emerald-600 font-black shadow-xs shadow-emerald-600/20'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
             }`}
             title="Add up to 3 properties for side-by-side spec comparison"
           >
@@ -520,6 +525,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
           </button>
 
           <div className="flex items-center gap-1.5">
+            {/* Tour Button - Oceanic Royal Blue Theme */}
             {onTourInside && (
               <button
                 type="button"
@@ -527,23 +533,24 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
                   e.stopPropagation();
                   onTourInside(property);
                 }}
-                className="px-3 py-1.5 text-xs font-black text-neutral-950 bg-gradient-to-r from-amber-400 via-[#FFD200] to-yellow-400 hover:from-amber-300 hover:to-yellow-300 rounded-xl transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-xs"
+                className="px-3 py-1.5 text-xs font-black text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-xs shadow-blue-600/20 border border-blue-500"
                 title="Tour Inside (Rolling Camera)"
               >
-                <Camera className="w-3.5 h-3.5 text-neutral-950" />
+                <Camera className="w-3.5 h-3.5 text-white" />
                 <span>Tour</span>
               </button>
             )}
 
+            {/* Details Button - Bold Crimson Red Theme */}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(property);
               }}
-              className="px-3 py-1.5 text-xs font-bold text-neutral-800 bg-neutral-100 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+              className="px-3.5 py-1.5 text-xs font-black text-white bg-red-600 hover:bg-red-700 active:scale-95 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs shadow-red-600/20 border border-red-500"
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-3.5 h-3.5 text-white" />
               <span>Details</span>
             </button>
           </div>

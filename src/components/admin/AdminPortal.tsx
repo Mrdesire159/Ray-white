@@ -42,15 +42,22 @@ interface AdminPortalProps {
   onBackToSite: () => void;
   onNavigateToProperty?: (propertyId: string) => void;
   onNavigateToMediaUpload?: () => void;
+  onNavigateToReplyPortal?: () => void;
 }
 
-export const AdminPortal: React.FC<AdminPortalProps> = ({ onBackToSite, onNavigateToMediaUpload }) => {
+export const AdminPortal: React.FC<AdminPortalProps> = ({
+  onBackToSite,
+  onNavigateToMediaUpload,
+  onNavigateToReplyPortal,
+}) => {
   const {
     requests,
     pendingCount,
     urgentCount,
     approvedCount,
     completedCount,
+    unrepliedCount,
+    targetCustomEmail,
     totalVolumeEstimate,
     approveRequest,
     declineRequest,
@@ -277,6 +284,23 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBackToSite, onNaviga
             </div>
 
             <div className="flex items-center gap-2.5">
+              {onNavigateToReplyPortal && (
+                <button
+                  type="button"
+                  onClick={onNavigateToReplyPortal}
+                  className="px-3.5 py-2 text-xs font-black text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98 border border-blue-500"
+                  title={`Open In-Site Reply Portal (${targetCustomEmail})`}
+                >
+                  <Mail className="w-4 h-4 text-white" />
+                  <span>Reply Portal</span>
+                  {unrepliedCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-white text-blue-700">
+                      {unrepliedCount}
+                    </span>
+                  )}
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(true)}

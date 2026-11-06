@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle, ShieldCheck } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle, ShieldCheck, MessageSquare, ArrowRight } from 'lucide-react';
 import { useRequests } from '../context/RequestContext';
 
-export const ContactView: React.FC = () => {
-  const { addRequest } = useRequests();
+interface ContactViewProps {
+  onOpenReplyPortal?: () => void;
+}
+
+export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) => {
+  const { addRequest, targetCustomEmail } = useRequests();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -42,6 +46,7 @@ export const ContactView: React.FC = () => {
     addRequest({
       type: 'contact',
       priority: 'normal',
+      targetEmail: targetCustomEmail,
       client: {
         name,
         email,
@@ -49,7 +54,7 @@ export const ContactView: React.FC = () => {
         preferredContact: 'email',
       },
       details: {
-        subject: `Inquiry directed to ${office}`,
+        subject: `Inquiry directed to ${office} via ${targetCustomEmail}`,
         message,
         preferredOffice: office,
       },
@@ -60,6 +65,43 @@ export const ContactView: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+      {/* Official Custom Email Direct Routing Banner */}
+      <div className="mb-10 p-6 rounded-3xl bg-gradient-to-r from-neutral-950 via-blue-950 to-neutral-950 text-white border border-blue-900/60 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-600/20 text-[#FFD200] border border-blue-500/30 flex items-center justify-center shrink-0 shadow-lg">
+            <Mail className="w-7 h-7 text-[#FFD200]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#FFD200]">
+                Official Custom Contact Email &amp; Inbound Channel
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Active Direct
+              </span>
+            </div>
+            <div className="text-xl sm:text-2xl font-mono font-black text-white mt-1 tracking-tight">
+              {targetCustomEmail}
+            </div>
+            <p className="text-xs text-neutral-300 mt-1 max-w-xl leading-relaxed">
+              Every message and enquiry sent from this site routes directly to <strong className="text-white font-mono">{targetCustomEmail}</strong>. You can view conversations and dispatch live replies within our in-site Reply Portal.
+            </p>
+          </div>
+        </div>
+
+        {onOpenReplyPortal && (
+          <button
+            type="button"
+            onClick={onOpenReplyPortal}
+            className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center gap-2 cursor-pointer border border-blue-500 shrink-0 active:scale-95"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Open Reply Chat Portal</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       <div className="max-w-3xl mb-12">
         <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">
           Connect with Us
@@ -68,7 +110,7 @@ export const ContactView: React.FC = () => {
           Ray White Office Network &amp; Enquiries
         </h1>
         <p className="mt-3 text-neutral-600 text-sm sm:text-base leading-relaxed">
-          Whether you are looking to buy, lease, or request an appraisal on your home, our team of property specialists is here to guide every step.
+          Whether you are looking to buy, lease, or request an appraisal on your home, our team of property specialists is here to guide every step. All communications are received at <strong className="text-neutral-900 font-mono">{targetCustomEmail}</strong>.
         </p>
       </div>
 
@@ -131,17 +173,28 @@ export const ContactView: React.FC = () => {
             {submitted ? (
               <div className="text-center py-8 space-y-3">
                 <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto" />
-                <h3 className="font-bold text-base text-neutral-900">Message Received</h3>
+                <h3 className="font-bold text-base text-neutral-900">Message Received &amp; Routed</h3>
                 <p className="text-xs text-neutral-600">
-                  Thank you, {name}. A Ray White representative from {office} will be in touch within 2 business hours.
+                  Thank you, {name}. Your inquiry has been routed directly to <strong className="font-mono text-neutral-900">{targetCustomEmail}</strong>. A Ray White representative will reply directly to <strong className="text-neutral-900">{email}</strong> shortly.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setSubmitted(false)}
-                  className="px-4 py-2 bg-neutral-900 text-white text-xs font-bold rounded-lg mt-3"
-                >
-                  Send another message
-                </button>
+                <div className="pt-2 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSubmitted(false)}
+                    className="px-4 py-2 bg-neutral-900 text-white text-xs font-bold rounded-lg cursor-pointer"
+                  >
+                    Send another message
+                  </button>
+                  {onOpenReplyPortal && (
+                    <button
+                      type="button"
+                      onClick={onOpenReplyPortal}
+                      className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg cursor-pointer"
+                    >
+                      View in Reply Portal
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-3.5">

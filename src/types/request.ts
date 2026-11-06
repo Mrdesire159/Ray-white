@@ -56,6 +56,17 @@ export interface AuditLogEntry {
   details?: string;
 }
 
+export interface RequestReply {
+  id: string;
+  senderEmail: string; // e.g. "contact@raywhiterealestate.com"
+  senderName: string; // e.g. "Ray White Concierge"
+  recipientEmail: string;
+  recipientName?: string;
+  subject?: string;
+  message: string;
+  sentAt: string;
+}
+
 export interface AdminRequest {
   id: string;
   type: RequestType;
@@ -64,6 +75,10 @@ export interface AdminRequest {
   createdAt: string;
   updatedAt: string;
   client: ClientInfo;
+
+  // Custom routing
+  targetEmail?: string; // defaults to 'contact@raywhiterealestate.com'
+  replies?: RequestReply[];
 
   // Associated property (if applicable)
   propertyId?: string;

@@ -26,12 +26,16 @@ import {
   TrendingUp,
   Award,
   Film,
+  QrCode,
+  Smartphone,
 } from 'lucide-react';
 import { Property, Agent } from '../types/property';
 import { getAgentById } from '../data/agents';
 import { LoanRepaymentCalculator } from './LoanRepaymentCalculator';
 import { LoanComparisonTool } from './LoanComparisonTool';
+import { RateScheduleComparison } from './RateScheduleComparison';
 import { ClimateComfortBadge } from './ClimateComfortBadge';
+import { PropertyQRCodeModal } from './PropertyQRCodeModal';
 import { useRequests } from '../context/RequestContext';
 import { usePrice } from '../context/PriceContext';
 
@@ -71,7 +75,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   const [registeredInspection, setRegisteredInspection] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isMortgageCalcModalOpen, setIsMortgageCalcModalOpen] = useState(false);
-  const [loanViewMode, setLoanViewMode] = useState<'calculator' | 'compare'>('calculator');
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [loanViewMode, setLoanViewMode] = useState<'calculator' | 'rate-compare' | 'compare'>('calculator');
 
   const { getSyncedProperty } = usePrice();
   const activeProp = getSyncedProperty(property);
@@ -190,36 +195,50 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* 3D Tour Button - Oceanic Blue */}
             {onTourInside && (
               <button
                 type="button"
                 onClick={() => onTourInside(property)}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer bg-[#FFD200] hover:bg-[#E5BC00] text-neutral-950 shadow-2xs"
+                className="px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20 active:scale-95 border border-blue-500"
                 title="Tour Inside with 3D Rolling Camera"
               >
-                <Camera className="w-4 h-4 text-neutral-950" />
+                <Camera className="w-4 h-4 text-white" />
                 <span>Tour Inside</span>
               </button>
             )}
 
+            {/* Loan Calculator Button - Fresh Mint / Emerald Green */}
             <button
               type="button"
               onClick={() => setIsMortgageCalcModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer bg-neutral-100 hover:bg-neutral-200 text-neutral-800"
+              className="px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 active:scale-95 border border-emerald-500"
               title="Open Loan Repayment Calculator"
             >
-              <Calculator className="w-4 h-4 text-[#E5BC00]" />
+              <Calculator className="w-4 h-4 text-white" />
               <span className="hidden sm:inline">Loan Calculator</span>
             </button>
 
+            {/* QR Code / Save to Mobile Button - Distinct Teal / Mint */}
+            <button
+              type="button"
+              onClick={() => setIsQrModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-600/20 active:scale-95 border border-teal-500"
+              title="Generate QR code to instantly save property & agent contact to your phone"
+            >
+              <QrCode className="w-4 h-4 text-white" />
+              <span className="hidden sm:inline">QR Pass</span>
+            </button>
+
+            {/* Compare Button - Bold Crimson Red */}
             {onToggleCompare && (
               <button
                 type="button"
                 onClick={() => onToggleCompare(property.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 border ${
                   isCompared
-                    ? 'bg-[#FFD200] text-neutral-950 font-bold'
-                    : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800'
+                    ? 'bg-red-600 text-white border-red-500 shadow-sm shadow-red-600/20'
+                    : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-300'
                 }`}
                 title={isCompared ? 'Remove from Compare' : 'Add to side-by-side comparison (max 3)'}
               >
@@ -228,31 +247,40 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               </button>
             )}
 
+            {/* Share Button - Cyan / Sky Blue */}
             <button
               onClick={handleShare}
-              className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer relative"
+              className="p-2 rounded-xl text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-300 transition-colors cursor-pointer relative shadow-2xs"
               title="Share listing"
             >
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-4.5 h-4.5" />
               {copiedLink && (
                 <span className="absolute -bottom-7 right-0 text-[10px] font-bold bg-neutral-900 text-white px-2 py-0.5 rounded shadow-sm whitespace-nowrap">
                   Link copied!
                 </span>
               )}
             </button>
+
+            {/* Save Heart Button - Crimson / Rose Red */}
             <button
               onClick={() => onToggleSave && onToggleSave(property.id)}
-              className="p-2 rounded-lg text-neutral-600 hover:text-rose-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+              className={`p-2 rounded-xl transition-colors cursor-pointer border shadow-2xs ${
+                isSaved
+                  ? 'bg-red-600 text-white border-red-500'
+                  : 'bg-rose-50 text-rose-600 border-rose-300 hover:bg-rose-100'
+              }`}
               title="Save property"
             >
-              <Heart className={`w-5 h-5 ${isSaved ? 'text-rose-500 fill-rose-500' : ''}`} />
+              <Heart className={`w-4.5 h-4.5 ${isSaved ? 'text-white fill-white' : 'text-rose-600'}`} />
             </button>
+
+            {/* Close Button - Slate Neutral */}
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-neutral-600 hover:text-neutral-950 bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 transition-colors cursor-pointer"
               aria-label="Close modal"
             >
-              <X className="w-6 h-6" />
+              <X className="w-4.5 h-4.5" />
             </button>
           </div>
         </div>
@@ -317,9 +345,9 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                   <button
                     type="button"
                     onClick={() => onTourInside(property)}
-                    className="px-3.5 py-1.5 bg-[#FFD200] hover:bg-[#E5BC00] text-neutral-950 rounded-lg text-xs font-bold shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-blue-400 active:scale-95 shadow-blue-900/30"
                   >
-                    <Camera className="w-3.5 h-3.5 text-neutral-950" />
+                    <Camera className="w-3.5 h-3.5 text-white" />
                     <span>Tour Inside</span>
                   </button>
                 )}
@@ -330,9 +358,9 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                       onClose();
                       onOpenVideoStorage(property.id);
                     }}
-                    className="px-3.5 py-1.5 bg-neutral-900/90 hover:bg-neutral-900 text-white rounded-lg text-xs font-bold shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-white/20 backdrop-blur-xs"
+                    className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-red-400 active:scale-95 shadow-red-900/30"
                   >
-                    <Film className="w-3.5 h-3.5 text-[#FFD200]" />
+                    <Film className="w-3.5 h-3.5 text-white" />
                     <span>Watch 4K Video &amp; Drone</span>
                   </button>
                 )}
@@ -540,6 +568,22 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     No open house scheduled. Please contact the listing agent to arrange a private viewing.
                   </p>
                 )}
+
+                {/* Open House Mobile Scan Shortcut */}
+                <div className="mt-3.5 pt-3 border-t border-neutral-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="flex items-center gap-1.5 text-neutral-300 text-[11px]">
+                    <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Attending this inspection? Save directly to your smartphone:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 underline underline-offset-2 cursor-pointer transition-colors"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>Open QR Mobile Pass</span>
+                  </button>
+                </div>
               </div>
 
               {/* Description */}
@@ -614,69 +658,17 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
               {/* Mortgage & Loan Repayment / Comparison Section - Directly integrated for listings */}
               <div id="mortgage-calculator-section" className="scroll-mt-6 pt-2">
-                <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-200 pb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
-                        Ray White Finance
-                      </span>
-                      <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
-                        {loanViewMode === 'calculator' ? (
-                          <>
-                            <Calculator className="w-5 h-5 text-neutral-900" />
-                            <span>Loan Repayment Calculator</span>
-                          </>
-                        ) : (
-                          <>
-                            <Scale className="w-5 h-5 text-neutral-900" />
-                            <span>Loan Comparison Tool (Variable vs Fixed)</span>
-                          </>
-                        )}
-                      </h3>
-                    </div>
-                    <p className="text-xs text-neutral-500 mt-1">
-                      {loanViewMode === 'calculator'
-                        ? `Calculate periodic repayments with interactive principal vs. interest amortization breakdown for ${property.address}.`
-                        : `Compare monthly repayments, total lifetime interest, and feature differences across Variable and Fixed rate products.`}
-                    </p>
-                  </div>
-
-                  {/* Toggle between Calculator & Comparison Tool */}
-                  <div className="flex items-center p-1 bg-neutral-100 rounded-lg border border-neutral-200 shrink-0 self-start sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={() => setLoanViewMode('calculator')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                        loanViewMode === 'calculator'
-                          ? 'bg-white text-neutral-900 shadow-xs border border-neutral-200'
-                          : 'text-neutral-600 hover:text-neutral-900'
-                      }`}
-                    >
-                      <Calculator className="w-3.5 h-3.5" />
-                      <span>Repayment Calculator</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLoanViewMode('compare')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                        loanViewMode === 'compare'
-                          ? 'bg-[#FFD200] text-neutral-950 shadow-xs font-black'
-                          : 'text-neutral-600 hover:text-neutral-900'
-                      }`}
-                    >
-                      <Scale className="w-3.5 h-3.5" />
-                      <span>Compare Products</span>
-                      <span className="hidden sm:inline-block px-1.5 py-0.2 rounded-full text-[9px] bg-neutral-900 text-[#FFD200]">
-                        New
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
                 {loanViewMode === 'calculator' ? (
                   <LoanRepaymentCalculator
                     propertyPrice={effectivePrice}
                     propertyTitle={property.title}
+                    propertyAddress={`${property.address}, ${property.suburb} ${property.state}`}
+                    inline={true}
+                    onOpenRateCompare={() => setLoanViewMode('rate-compare')}
+                  />
+                ) : loanViewMode === 'rate-compare' ? (
+                  <RateScheduleComparison
+                    propertyPrice={effectivePrice}
                     propertyAddress={`${property.address}, ${property.suburb} ${property.state}`}
                     inline={true}
                   />
@@ -732,31 +724,56 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                   </div>
                 </div>
 
-                {/* Direct Agent Contact Buttons */}
+                {/* Direct Agent Contact Buttons - Uniquely Themed Blue & Green */}
                 <div className="grid grid-cols-2 gap-2">
                   <a
                     href={`tel:${agent.phone.replace(/[^0-9+]/g, '')}`}
-                    className="py-2.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs shadow-blue-600/20 active:scale-95"
                   >
-                    <Phone className="w-3.5 h-3.5 text-neutral-700" />
+                    <Phone className="w-3.5 h-3.5 text-white" />
                     <span>Call Agent</span>
                   </a>
                   <a
                     href={`mailto:${agent.email}?subject=Inquiry on ${property.address}`}
-                    className="py-2.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs shadow-emerald-600/20 active:scale-95"
                   >
-                    <Mail className="w-3.5 h-3.5 text-neutral-700" />
+                    <Mail className="w-3.5 h-3.5 text-white" />
                     <span>Email Agent</span>
                   </a>
                 </div>
 
-                {/* Quick Mortgage Repayment Action */}
+                {/* Instant QR Code Mobile Save Card */}
+                <div className="p-3 bg-gradient-to-r from-teal-50 via-emerald-50 to-blue-50 rounded-xl border border-teal-200/90 flex items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <QrCode className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-black text-teal-950 flex items-center gap-1 truncate">
+                        <span>Save to Mobile</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 bg-teal-200 text-teal-800 rounded">vCard</span>
+                      </div>
+                      <p className="text-[10px] text-teal-700 leading-tight truncate">
+                        Scan QR code with phone camera
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="shrink-0 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-black text-xs rounded-lg transition-all shadow-xs cursor-pointer border border-teal-500"
+                  >
+                    View QR
+                  </button>
+                </div>
+
+                {/* Quick Mortgage Repayment Action - Bold Crimson / Rose Red Accent */}
                 <button
                   type="button"
                   onClick={scrollToCalculator}
-                  className="w-full py-2.5 px-3 bg-amber-50 hover:bg-[#FFD200]/20 border border-amber-300/80 text-neutral-900 font-bold text-xs rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+                  className="w-full py-2.5 px-3 bg-red-50 hover:bg-red-100 border-2 border-red-300 text-red-800 font-black text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-98"
                 >
-                  <Calculator className="w-3.5 h-3.5 text-neutral-900" />
+                  <Calculator className="w-3.5 h-3.5 text-red-700" />
                   <span>Estimate Mortgage Payments</span>
                 </button>
 
@@ -770,15 +787,15 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs space-y-2">
                       <div className="flex items-center gap-1.5 font-bold text-emerald-900">
                         <Check className="w-4 h-4 text-emerald-600" />
-                        <span>Enquiry Sent to {agent.name}!</span>
+                        <span>Enquiry Sent to contact@raywhiterealestate.com!</span>
                       </div>
                       <p>
-                        Thank you for your interest. {agent.name} will contact you shortly with full documentation and contract details.
+                        Thank you for your interest. Your message has been routed to our central inbox and assigned to {agent.name}. We will contact you shortly.
                       </p>
                       <button
                         type="button"
                         onClick={() => setInquirySubmitted(false)}
-                        className="text-emerald-700 underline font-semibold mt-1"
+                        className="text-emerald-700 underline font-semibold mt-1 cursor-pointer"
                       >
                         Send another note
                       </button>
@@ -792,7 +809,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                           value={inquiryName}
                           onChange={(e) => setInquiryName(e.target.value)}
                           placeholder="Your Full Name *"
-                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2.5 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#FFD200]"
+                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2.5 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
@@ -802,7 +819,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                           value={inquiryEmail}
                           onChange={(e) => setInquiryEmail(e.target.value)}
                           placeholder="Email Address *"
-                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2.5 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#FFD200]"
+                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2.5 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
@@ -811,7 +828,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                           value={inquiryPhone}
                           onChange={(e) => setInquiryPhone(e.target.value)}
                           placeholder="Phone Number (e.g. 0412 345 678)"
-                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2.5 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#FFD200]"
+                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2.5 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
@@ -819,15 +836,18 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                           rows={3}
                           value={inquiryMessage}
                           onChange={(e) => setInquiryMessage(e.target.value)}
-                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#FFD200] resize-none"
+                          className="w-full bg-neutral-50 border border-neutral-200 text-xs rounded-lg px-3 py-2 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                         />
                       </div>
                       <button
                         type="submit"
-                        className="w-full py-3 bg-[#FFD200] hover:bg-[#E5BC00] active:scale-[0.98] text-neutral-950 font-bold text-xs rounded-lg transition-all shadow-xs cursor-pointer"
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-blue-600/25 cursor-pointer border border-blue-500"
                       >
                         Send Enquiry
                       </button>
+                      <div className="text-[10px] text-neutral-400 text-center font-mono">
+                        Direct Route: contact@raywhiterealestate.com
+                      </div>
                     </form>
                   )}
                 </div>
@@ -850,6 +870,15 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           propertyAddress={`${property.address}, ${property.suburb} ${property.state}`}
           isOpenModal={isMortgageCalcModalOpen}
           onCloseModal={() => setIsMortgageCalcModalOpen(false)}
+        />
+      )}
+
+      {/* Unique Property & Contact QR Code Modal */}
+      {isQrModalOpen && (
+        <PropertyQRCodeModal
+          property={property}
+          isOpen={isQrModalOpen}
+          onClose={() => setIsQrModalOpen(false)}
         />
       )}
     </div>

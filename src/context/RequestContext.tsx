@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AdminRequest, RequestPriority, RequestStatus, RequestType } from '../types/request';
+import { AdminRequest, RequestPriority, RequestStatus, RequestType, RequestReply } from '../types/request';
 import { INITIAL_REQUESTS } from '../data/mockRequests';
 import { AGENTS, getAgentById } from '../data/agents';
 
@@ -17,8 +17,23 @@ interface RequestContextType {
   urgentCount: number;
   approvedCount: number;
   completedCount: number;
+  unrepliedCount: number;
+  targetCustomEmail: string;
   totalVolumeEstimate: number;
   addRequest: (newReq: Partial<AdminRequest> & { type: RequestType; client: AdminRequest['client'] }) => string;
+  sendReply: (
+    requestId: string,
+    replyText: string,
+    options?: { senderName?: string; senderEmail?: string; subject?: string }
+  ) => void;
+  sendDirectMessage: (data: {
+    recipientName: string;
+    recipientEmail: string;
+    recipientPhone?: string;
+    subject: string;
+    message: string;
+    propertyAddress?: string;
+  }) => string;
   approveRequest: (id: string, payload?: ApprovePayload) => void;
   declineRequest: (id: string, reason: string, note?: string, actorName?: string) => void;
   completeRequest: (id: string, note?: string, actorName?: string) => void;
@@ -94,6 +109,8 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const urgentCount = requests.filter((r) => r.status === 'pending' && r.priority === 'urgent').length;
   const approvedCount = requests.filter((r) => r.status === 'approved').length;
   const completedCount = requests.filter((r) => r.status === 'completed').length;
+  const unrepliedCount = requests.filter((r) => !r.replies || r.replies.length === 0).length;
+  const targetCustomEmail = 'contact@raywhiterealestate.com';
 
   // Calculate estimated total pipeline volume
   const totalVolumeEstimate = requests.reduce((sum, req) => {
@@ -128,6 +145,8 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: timestamp,
       updatedAt: timestamp,
       client: newReq.client,
+      targetEmail: newReq.targetEmail || targetCustomEmail,
+      replies: newReq.replies || [],
       propertyId: newReq.propertyId,
       propertyTitle: newReq.propertyTitle,
       propertyAddress: newReq.propertyAddress,
@@ -143,12 +162,115 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
           action: 'Request Created',
           timestamp,
           actor: 'Website Form Submission',
-          details: `Client ${newReq.client.name} submitted a new ${newReq.type} request.`,
+          details: `Client ${newReq.client.name} submitted a new ${newReq.type} request directed to ${targetCustomEmail}.`,
         },
       ],
     };
 
     setRequests((prev) => [created, ...prev]);
+    return newId;
+  };
+
+  const sendReply = (
+    requestId: string,
+    replyText: string,
+    options?: { senderName?: string; senderEmail?: string; subject?: string }
+  ) => {
+    const timestamp = new Date().toISOString();
+    const replyId = `REP-${Date.now()}`;
+    const senderEmail = options?.senderEmail || targetCustomEmail;
+    const senderName = options?.senderName || 'Ray White Concierge';
+
+    setRequests((prev) =>
+      prev.map((req) => {
+        if (req.id !== requestId) return req;
+
+        const newReply: RequestReply = {
+          id: replyId,
+          senderEmail,
+          senderName,
+          recipientEmail: req.client.email,
+          recipientName: req.client.name,
+          subject: options?.subject || req.details.subject || `Re: Your Inquiry with Ray White`,
+          message: replyText,
+          sentAt: timestamp,
+        };
+
+        const currentReplies = req.replies || [];
+        const updatedReplies = [...currentReplies, newReply];
+
+        const auditEntry = {
+          action: 'Reply Sent',
+          timestamp,
+          actor: `${senderName} <${senderEmail}>`,
+          details: `Direct reply sent to ${req.client.email}: "${replyText.slice(0, 80)}${replyText.length > 80 ? '...' : ''}"`,
+        };
+
+        return {
+          ...req,
+          updatedAt: timestamp,
+          replies: updatedReplies,
+          auditLog: [auditEntry, ...req.auditLog],
+        };
+      })
+    );
+  };
+
+  const sendDirectMessage = (data: {
+    recipientName: string;
+    recipientEmail: string;
+    recipientPhone?: string;
+    subject: string;
+    message: string;
+    propertyAddress?: string;
+  }): string => {
+    const timestamp = new Date().toISOString();
+    const newId = `MSG-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const replyId = `REP-${Date.now()}`;
+
+    const newReq: AdminRequest = {
+      id: newId,
+      type: 'contact',
+      status: 'approved',
+      priority: 'normal',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      client: {
+        name: data.recipientName,
+        email: data.recipientEmail,
+        phone: data.recipientPhone || 'Unspecified',
+        preferredContact: 'email',
+      },
+      targetEmail: targetCustomEmail,
+      propertyAddress: data.propertyAddress,
+      details: {
+        subject: data.subject,
+        message: data.message,
+      },
+      replies: [
+        {
+          id: replyId,
+          senderEmail: targetCustomEmail,
+          senderName: 'Ray White Executive Team',
+          recipientEmail: data.recipientEmail,
+          recipientName: data.recipientName,
+          subject: data.subject,
+          message: data.message,
+          sentAt: timestamp,
+        },
+      ],
+      notes: [],
+      auditLog: [
+        {
+          action: 'Direct Message Created',
+          timestamp,
+          actor: targetCustomEmail,
+          details: `Outbound direct communication initiated to ${data.recipientEmail}`,
+        },
+      ],
+    };
+
+    setRequests((prev) => [newReq, ...prev]);
     return newId;
   };
 
@@ -409,8 +531,12 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
         urgentCount,
         approvedCount,
         completedCount,
+        unrepliedCount,
+        targetCustomEmail,
         totalVolumeEstimate,
         addRequest,
+        sendReply,
+        sendDirectMessage,
         approveRequest,
         declineRequest,
         completeRequest,

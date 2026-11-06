@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Menu, X, Heart, Phone, CalendarCheck, Scale, MessageSquare, Sparkles, ShieldCheck } from 'lucide-react';
+import { Menu, X, Heart, Phone, CalendarCheck, Scale, MessageSquare, Sparkles, ShieldCheck, Mail } from 'lucide-react';
 import { useRequests } from '../context/RequestContext';
+import { ThemeSelector } from './ThemeSelector';
 
 interface HeaderProps {
   currentView: string;
@@ -24,13 +25,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenChat,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { pendingCount, isAdminAuthenticated } = useRequests();
+  const { pendingCount, isAdminAuthenticated, unrepliedCount, targetCustomEmail } = useRequests();
 
   const navItems = [
     { id: 'home', label: 'Home' },
     { id: 'buy', label: 'Buy', tab: 'sale' as const },
     { id: 'rent', label: 'Rent', tab: 'rent' as const },
-    { id: 'videos', label: 'Video Storage' },
     { id: 'trends', label: 'Market Trends' },
     { id: 'pricelist', label: 'Price List' },
     { id: 'agents', label: 'Agents' },
@@ -43,25 +43,25 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200 transition-all duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-15 sm:h-20 gap-2 sm:gap-6 lg:gap-8">
           {/* Brand Zone */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={() => handleNavClick('home')}
-              className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none"
+              className="flex items-center gap-2 text-left group cursor-pointer focus:outline-none"
               aria-label="Ray White Home"
             >
               {/* Ray White Brand Mark */}
               <div className="flex items-center">
-                <div className="w-9 h-9 bg-[#FFD200] flex items-center justify-center font-bold text-neutral-900 text-xl tracking-tighter rounded-sm shadow-xs group-hover:bg-[#E5BC00] transition-colors">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#FFD200] flex items-center justify-center font-bold text-neutral-900 text-lg sm:text-xl tracking-tighter rounded-sm shadow-xs group-hover:bg-[#E5BC00] transition-colors">
                   RW
                 </div>
-                <div className="ml-2.5 flex flex-col">
-                  <span className="text-xl font-extrabold tracking-tight text-neutral-900 leading-none">
+                <div className="ml-2 sm:ml-2.5 flex flex-col">
+                  <span className="text-lg sm:text-xl font-extrabold tracking-tight text-neutral-900 leading-none">
                     Ray White<span className="text-[#FFD200]">.</span>
                   </span>
-                  <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mt-0.5">
+                  <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mt-0.5">
                     Real Estate
                   </span>
                 </div>
@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-neutral-700">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-sm font-medium text-neutral-700">
             {navItems.map((item) => {
               const isActive =
                 currentView === item.id ||
@@ -93,12 +93,37 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Right Action Zone */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            {/* Admin Portal Button - Hidden from public, only visible when staff is authenticated with password 000333999 */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 lg:gap-3 shrink-0">
+            {/* Inbound Messages & Reply Chat Portal - Custom Email Channel */}
+            <button
+              onClick={() => handleNavClick('replyportal')}
+              className={`relative px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs active:scale-95 ${
+                currentView === 'replyportal'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-500/25 font-black'
+                  : 'text-neutral-800 bg-white hover:bg-neutral-100 border-neutral-300'
+              }`}
+              aria-label="Open In-Site Reply Portal"
+              title={`In-Site Reply Portal (${targetCustomEmail})`}
+            >
+              <div className="relative">
+                <Mail className={`w-4 h-4 ${currentView === 'replyportal' ? 'text-white' : 'text-blue-600'}`} />
+                {unrepliedCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+                )}
+              </div>
+              <span className="hidden md:inline font-bold">Reply Portal</span>
+              {unrepliedCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-xs tabular-nums">
+                  {unrepliedCount}
+                </span>
+              )}
+            </button>
+
+            {/* Admin Portal Button - Hidden from public, only visible when staff is authenticated */}
             {isAdminAuthenticated && (
               <button
                 onClick={() => handleNavClick('admin')}
-                className={`relative px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border ${
+                className={`relative px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border ${
                   currentView === 'admin'
                     ? 'bg-neutral-950 text-[#FFD200] border-neutral-900 shadow-sm ring-2 ring-neutral-900/10'
                     : 'text-neutral-800 bg-neutral-100 hover:bg-neutral-200 border-neutral-200'
@@ -115,79 +140,86 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </button>
             )}
-            {/* Chat Concierge Button */}
+
+            {/* Chat Concierge Button - Oceanic Blue Theme */}
             {onOpenChat && (
               <button
                 onClick={onOpenChat}
-                className="relative p-2 sm:px-3 sm:py-2 rounded-xl text-neutral-700 hover:text-blue-600 hover:bg-blue-50/80 transition-colors cursor-pointer flex items-center gap-1.5 border border-neutral-200/80"
+                className="relative p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
                 aria-label="Open Ray White Chat Concierge"
                 title="Chat with AI Concierge"
               >
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <MessageSquare className="w-4 h-4 text-blue-600" />
-                <span className="hidden xl:inline text-xs font-bold text-neutral-800">Chat</span>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-600 animate-pulse" />
+                <MessageSquare className="w-4 h-4 text-blue-700" />
+                <span className="hidden xl:inline text-xs font-bold text-blue-900">Chat</span>
               </button>
             )}
 
-            {/* Compare properties button */}
+            {/* Compare properties button - Fresh Mint / Emerald Green Theme */}
             <button
               onClick={onOpenCompare}
-              className={`relative p-2 sm:px-2.5 sm:py-2 rounded-xl transition-all cursor-pointer border ${
+              className={`relative p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl transition-all cursor-pointer border flex items-center gap-1.5 shadow-2xs active:scale-95 ${
                 compareCount > 0
-                  ? 'text-amber-950 bg-amber-50 border-amber-300 hover:bg-amber-100 shadow-2xs'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100 border-neutral-200/80'
+                  ? 'text-white bg-emerald-600 border-emerald-600 hover:bg-emerald-700 font-bold shadow-xs shadow-emerald-600/20'
+                  : 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 font-semibold'
               }`}
               aria-label="Compare properties"
               title={compareCount > 0 ? `Compare (${compareCount}/3 properties)` : 'Compare Properties'}
             >
-              <Scale className={`w-4 h-4 ${compareCount > 0 ? 'text-amber-600 stroke-[2.2]' : ''}`} />
+              <Scale className={`w-4 h-4 ${compareCount > 0 ? 'text-white stroke-[2.4]' : 'text-emerald-700'}`} />
+              <span className="hidden lg:inline text-xs font-bold">Compare</span>
               {compareCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-amber-500 text-neutral-950 text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-xs border border-white">
+                <span className="bg-white text-emerald-800 text-[10px] font-black w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full flex items-center justify-center shadow-xs ml-0.5">
                   {compareCount}
                 </span>
               )}
             </button>
 
-            {/* Saved properties button */}
+            {/* Saved properties button - Bold Crimson / Rose Red Theme */}
             <button
               onClick={onOpenSaved}
-              className="relative p-2 sm:px-2.5 sm:py-2 rounded-xl text-neutral-600 hover:text-neutral-900 hover:bg-rose-50/80 transition-colors cursor-pointer border border-neutral-200/80"
+              className={`relative p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl transition-all cursor-pointer border flex items-center gap-1.5 shadow-2xs active:scale-95 ${
+                savedCount > 0
+                  ? 'text-white bg-red-600 border-red-600 hover:bg-red-700 font-bold shadow-xs shadow-red-600/20'
+                  : 'text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-300 font-semibold'
+              }`}
               aria-label="Saved properties"
               title="Saved Properties"
             >
-              <Heart className={`w-4 h-4 ${savedCount > 0 ? 'text-rose-500 fill-rose-500' : 'text-neutral-600'}`} />
+              <Heart className={`w-4 h-4 ${savedCount > 0 ? 'text-white fill-white' : 'text-rose-600'}`} />
+              <span className="hidden lg:inline text-xs font-bold">Saved</span>
               {savedCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-xs border border-white">
+                <span className="bg-white text-red-600 text-[10px] font-black w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full flex items-center justify-center shadow-xs ml-0.5">
                   {savedCount}
                 </span>
               )}
             </button>
 
-            {/* Direct Phone Assistance */}
+            {/* Direct Phone Assistance - Crimson Red Accent */}
             <a
               href="tel:1300729944"
-              className="hidden lg:flex items-center gap-2 text-xs font-semibold text-neutral-600 hover:text-neutral-900 px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+              className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-2 rounded-xl transition-colors shadow-2xs"
             >
-              <Phone className="w-3.5 h-3.5 text-[#E5BC00]" />
+              <Phone className="w-3.5 h-3.5 text-red-600" />
               <span>1300 729 944</span>
             </a>
 
-            {/* Primary Action Button: Ray White Yellow Book Appraisal */}
+            {/* Primary Action Button: Royal Oceanic Blue Theme with Gold accent */}
             <button
               onClick={onOpenAppraisal}
-              className="px-4 py-2.5 text-xs sm:text-sm font-bold text-neutral-950 bg-[#FFD200] hover:bg-[#E5BC00] active:scale-[0.98] rounded-md transition-all shadow-xs flex items-center gap-2 whitespace-nowrap cursor-pointer"
+              className="hidden sm:flex px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-black text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] rounded-xl transition-all shadow-md shadow-blue-600/25 items-center gap-1.5 sm:gap-2 whitespace-nowrap cursor-pointer border border-blue-500"
             >
-              <CalendarCheck className="w-4 h-4 text-neutral-950" />
+              <CalendarCheck className="w-4 h-4 text-[#FFD200]" />
               <span>Book Appraisal</span>
             </button>
 
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-neutral-700 hover:text-neutral-950 rounded-lg hover:bg-neutral-100 cursor-pointer"
+              className="md:hidden p-1.5 sm:p-2 text-neutral-700 hover:text-neutral-950 rounded-lg hover:bg-neutral-100 cursor-pointer"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           </div>
         </div>
@@ -220,6 +252,20 @@ export const Header: React.FC<HeaderProps> = ({
                 {item.label}
               </button>
             ))}
+            <button
+              onClick={() => handleNavClick('replyportal')}
+              className="w-full text-left py-2.5 px-3 rounded-md text-blue-900 bg-blue-50/80 hover:bg-blue-100 font-bold text-sm flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-600" />
+                <span>Reply Chat Portal ({targetCustomEmail})</span>
+              </div>
+              {unrepliedCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white">
+                  {unrepliedCount} New
+                </span>
+              )}
+            </button>
             {isAdminAuthenticated && (
               <button
                 onClick={() => handleNavClick('admin')}
@@ -238,7 +284,13 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          <div className="pt-3 border-t border-neutral-100 space-y-2">
+          {/* Theme Palette Customizer in mobile drawer */}
+          <div className="pt-2.5 pb-1 border-t border-neutral-100 flex items-center justify-between">
+            <span className="text-xs font-semibold text-neutral-600">Color Palette</span>
+            <ThemeSelector compact={true} />
+          </div>
+
+          <div className="pt-2 border-t border-neutral-100 space-y-2">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

@@ -102,14 +102,14 @@ export const Hero: React.FC<HeroProps> = ({ onSearch }) => {
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20 w-full text-center">
         {/* Hero Kicker & Headlines */}
         <div className="max-w-3xl mx-auto mb-8 sm:mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold tracking-wide text-[#FFD200] mb-4 border border-white/15">
-            <span>Australasia’s Premier Real Estate Network</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-bold tracking-widest text-[#FFD200] mb-4 border border-white/15 uppercase">
+            <span>Australasia’s Premier Real Estate Network · Est. 1902</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white text-balance leading-tight">
-            Find your place with <span className="text-[#FFD200]">Ray White</span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white text-balance leading-tight uppercase">
+            Welcome to <span className="bg-gradient-to-r from-[#FFE04D] via-[#FFD200] to-[#E5BC00] bg-clip-text text-transparent">Ray White Real Estate</span>
           </h1>
-          <p className="mt-3.5 text-base sm:text-lg text-neutral-200 text-balance max-w-2xl mx-auto font-normal">
-            Discover premier residences, curated luxury estates, and rental opportunities across Sydney and beyond.
+          <p className="mt-3.5 text-base sm:text-lg text-neutral-200 text-balance max-w-2xl mx-auto font-normal leading-relaxed">
+            Where over 120 years of heritage meets visionary architectural distinction. Discover premier residences, curated luxury estates, and sanctuary homes.
           </p>
         </div>
 

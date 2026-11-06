@@ -9,6 +9,7 @@ import {
 import { buildVillaModel, VillaModelObjects } from './VillaModel';
 import { VillaCameraDirector } from './VillaDirector';
 import { villaAudio } from './VillaAudio';
+import { CinematicWelcomeOverlay } from '../CinematicWelcomeOverlay';
 
 type AtmosphereMode = 'day' | 'sunset' | 'twilight';
 type DisplayMode = 'photo' | '3d';
@@ -327,6 +328,10 @@ export const VillaCinematicDisplay: React.FC<VillaCinematicDisplayProps> = ({
     }
   };
 
+  const handleToggleDisplayMode = () => {
+    setDisplayMode((prev) => (prev === 'photo' ? '3d' : 'photo'));
+  };
+
   // Free orbit drag events for 3D mode
   const handlePointerDown = (e: React.PointerEvent) => {
     if (displayMode === '3d' && isFreeOrbit) {
@@ -434,32 +439,18 @@ export const VillaCinematicDisplay: React.FC<VillaCinematicDisplayProps> = ({
         } ${isFreeOrbit ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
       />
 
-      {/* Top Controls Overlay: Minimal Audio & Fullscreen */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 pointer-events-auto z-20">
-        {/* Audio Soundscape Toggle */}
-        <button
-          type="button"
-          onClick={toggleAudio}
-          className={`p-2 rounded-xl border backdrop-blur-md shadow-lg transition-all cursor-pointer ${
-            isAudioActive
-              ? 'bg-[#FFD200] text-neutral-950 border-amber-300'
-              : 'bg-neutral-900/70 hover:bg-neutral-900 text-white/80 border-white/10'
-          }`}
-          title={isAudioActive ? 'Mute Audio' : 'Unmute Ambient Soundscape'}
-        >
-          {isAudioActive ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-        </button>
-
-        {/* Fullscreen Toggle */}
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          className="p-2 rounded-xl bg-neutral-900/70 hover:bg-neutral-900 text-white/80 border border-white/10 backdrop-blur-md shadow-lg transition-all cursor-pointer"
-          title="Toggle Fullscreen"
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </button>
-      </div>
+      {/* Cinematic Welcoming Experience & Director Controls Overlay */}
+      <CinematicWelcomeOverlay
+        atmosphere={atmosphere}
+        onAtmosphereChange={applyAtmosphere}
+        displayMode={displayMode}
+        onToggleDisplayMode={handleToggleDisplayMode}
+        isAudioActive={isAudioActive}
+        onToggleAudio={toggleAudio}
+        onExploreListings={onExploreListings}
+        onOpenAppraisal={onOpenAppraisal}
+        onToggleFullscreen={toggleFullscreen}
+      />
     </div>
   );
 };

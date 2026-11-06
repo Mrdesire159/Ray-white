@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ThemeId = 'vibrant-azure' | 'emerald-oasis' | 'sunset-coral' | 'cosmic-violet';
+export type ThemeId = 'sapphire-crimson-mint' | 'vibrant-azure' | 'emerald-oasis' | 'sunset-coral' | 'cosmic-violet';
 
 export interface ThemeConfig {
   id: ThemeId;
@@ -21,6 +21,23 @@ export interface ThemeConfig {
 }
 
 export const THEMES: Record<ThemeId, ThemeConfig> = {
+  'sapphire-crimson-mint': {
+    id: 'sapphire-crimson-mint',
+    name: 'Sapphire, Crimson & Light Mint',
+    subtitle: 'Oceanic Blue, Bold Crimson & Light Mint Green',
+    badge: '💎 Unique Trio Harmony',
+    colors: {
+      primary: '#1E40AF', // Royal Oceanic Blue
+      secondary: '#DC2626', // Bold Crimson Red
+      accent: '#34D399', // Fresh Light Mint Green
+      heroGradient: 'from-slate-950 via-[#0c1a38] to-[#132c54]',
+      cardBorder: 'border-blue-500/30',
+      glowColor: 'rgba(37, 99, 235, 0.25)',
+      pillBg: 'bg-blue-500/15',
+      pillText: 'text-blue-400',
+      previewDots: ['#2563EB', '#DC2626', '#34D399'],
+    },
+  },
   'vibrant-azure': {
     id: 'vibrant-azure',
     name: 'Prestige Azure & Gold',
@@ -110,7 +127,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       // ignore
     }
-    return 'vibrant-azure';
+    return 'sapphire-crimson-mint';
   });
 
   const setThemeId = (id: ThemeId) => {

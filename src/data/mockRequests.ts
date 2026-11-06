@@ -77,6 +77,19 @@ export const INITIAL_REQUESTS: AdminRequest[] = [
       inspectionType: 'private_vip',
       message: 'Private confidential walkthrough requested prior to Saturday open home. Client is flying in from Melbourne on Friday evening.',
     },
+    targetEmail: 'contact@raywhiterealestate.com',
+    replies: [
+      {
+        id: 'rep-mock-1',
+        senderEmail: 'contact@raywhiterealestate.com',
+        senderName: 'Julian Henderson | Ray White Double Bay',
+        recipientEmail: 'v.dupont@luxeglobal.com',
+        recipientName: 'Vivienne Dupont',
+        subject: 'Re: Private Walkthrough Confirmation - 12 Wolseley Road, Point Piper',
+        message: 'Dear Ms. Dupont,\n\nWe have reserved a confidential viewing for Friday 11:30 AM before the public open house. Security access and valet parking are arranged at the main portico.\n\nLooking forward to welcoming you.\n\nWarm regards,\nJulian Henderson\ncontact@raywhiterealestate.com',
+        sentAt: '2026-10-22T11:00:00Z',
+      },
+    ],
     notes: [],
     auditLog: [
       {

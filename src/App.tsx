@@ -18,6 +18,7 @@ import { PropertyCompareModal } from './components/PropertyCompareModal';
 import { CompareFloatingBar } from './components/CompareFloatingBar';
 import { PriceListView } from './components/PriceListView';
 import { BookDisplayView } from './components/BookDisplayView';
+import { ReplyPortal } from './components/ReplyPortal';
 import { RollingBallDisplay } from './components/RollingBallDisplay';
 import { VillaCinematicDisplay } from './components/3d/VillaCinematicDisplay';
 import { HouseSlideView } from './components/HouseSlideView';
@@ -44,11 +45,7 @@ import {
   TrendingUp,
   Award,
   ShieldCheck,
-  LayoutGrid,
-  Map as MapIcon,
   ChevronDown,
-  TableProperties,
-  BookOpen,
   Compass,
   Camera,
   MessageSquare,
@@ -75,7 +72,7 @@ export default function App() {
   const { syncedProperties } = usePrice();
   const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<
-    'home' | 'listings' | 'pricelist' | 'book' | 'rollingball' | 'trends' | 'videos' | 'sell' | 'agents' | 'contact' | 'admin' | 'villatour'
+    'home' | 'listings' | 'pricelist' | 'book' | 'rollingball' | 'trends' | 'videos' | 'sell' | 'agents' | 'contact' | 'admin' | 'villatour' | 'replyportal'
   >('home');
   const [heroMode, setHeroMode] = useState<'cinematic' | 'rollingball'>('cinematic');
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -104,7 +101,7 @@ export default function App() {
     }
   });
 
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [viewMode] = useState<'grid' | 'map'>('grid');
 
   // Keep selectedProperty always in sync with real-time price reductions
   const activeSelectedProperty = useMemo(() => {
@@ -225,7 +222,8 @@ export default function App() {
       view === 'videos' ||
       view === 'sell' ||
       view === 'agents' ||
-      view === 'contact'
+      view === 'contact' ||
+      view === 'replyportal'
     ) {
       setCurrentView(view as any);
     } else {
@@ -498,103 +496,21 @@ export default function App() {
         {currentView === 'listings' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
             {/* Page Header Strip */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-neutral-200 gap-4">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-                  {filters.status === 'sale' ? 'Residential Sales' : 'Residential Rentals'}
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
-                  {filters.status === 'sale' ? 'Properties For Sale' : 'Properties For Rent'}
-                  {filters.location && (
-                    <span className="text-neutral-500 font-normal text-xl sm:text-2xl ml-2">
-                      in “{filters.location}”
-                    </span>
-                  )}
-                </h1>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Showing <span className="font-bold text-neutral-900">{filteredProperties.length}</span> verified listings
-                </p>
+            <div className="pb-6 border-b border-neutral-200">
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+                {filters.status === 'sale' ? 'Residential Sales' : 'Residential Rentals'}
               </div>
-
-              {/* View Switch & Sort Controls */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Sort dropdown */}
-                <div className="flex items-center gap-2 text-xs font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-lg px-3 py-2">
-                  <span>Sort:</span>
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) =>
-                      updateFilters({
-                        sortBy: e.target.value as FilterState['sortBy'],
-                      })
-                    }
-                    className="bg-transparent font-bold text-neutral-900 focus:outline-none cursor-pointer"
-                  >
-                    <option value="featured">Featured First</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="beds-desc">Bedrooms: Most</option>
-                    <option value="newest">Recently Built / Added</option>
-                  </select>
-                </div>
-
-                {/* View Mode Toggle: Grid vs Map vs Price List vs Book vs 3D Ball */}
-                <div className="flex items-center bg-neutral-200/70 p-1 rounded-lg gap-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('grid')}
-                    className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      viewMode === 'grid'
-                        ? 'bg-white text-neutral-900 shadow-2xs'
-                        : 'text-neutral-600 hover:text-neutral-900'
-                    }`}
-                    title="Grid View"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                    <span className="hidden sm:inline">Grid</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('map')}
-                    className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      viewMode === 'map'
-                        ? 'bg-white text-neutral-900 shadow-2xs'
-                        : 'text-neutral-600 hover:text-neutral-900'
-                    }`}
-                    title="Map View"
-                  >
-                    <MapIcon className="w-4 h-4" />
-                    <span className="hidden sm:inline">Map</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('pricelist')}
-                    className="p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 text-neutral-700 hover:text-neutral-950 hover:bg-white rounded transition-colors cursor-pointer"
-                    title="Price List (Rent & Sell)"
-                  >
-                    <TableProperties className="w-4 h-4 text-emerald-600" />
-                    <span className="hidden md:inline">Price List</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('book')}
-                    className="p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 text-neutral-700 hover:text-neutral-950 hover:bg-white rounded transition-colors cursor-pointer"
-                    title="Book Monograph View"
-                  >
-                    <BookOpen className="w-4 h-4 text-amber-600" />
-                    <span className="hidden md:inline">Book</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('rollingball')}
-                    className="p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 text-neutral-700 hover:text-neutral-950 hover:bg-white rounded transition-colors cursor-pointer"
-                    title="3D Rolling Ball Display"
-                  >
-                    <Compass className="w-4 h-4 text-indigo-600" />
-                    <span className="hidden md:inline">3D Ball</span>
-                  </button>
-                </div>
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+                {filters.status === 'sale' ? 'Properties For Sale' : 'Properties For Rent'}
+                {filters.location && (
+                  <span className="text-neutral-500 font-normal text-xl sm:text-2xl ml-2">
+                    in “{filters.location}”
+                  </span>
+                )}
+              </h1>
+              <p className="text-xs text-neutral-600 mt-1">
+                Showing <span className="font-bold text-neutral-900">{filteredProperties.length}</span> verified listings
+              </p>
             </div>
 
             {/* Layout Grid: Left Sidebar Filter + Right Property Cards */}
@@ -845,7 +761,22 @@ export default function App() {
         )}
 
         {/* VIEW: CONTACT */}
-        {currentView === 'contact' && <ContactView />}
+        {currentView === 'contact' && (
+          <ContactView onOpenReplyPortal={() => handleNavigate('replyportal')} />
+        )}
+
+        {/* VIEW: REPLY CHAT PORTAL (MESSAGES DIRECTED TO contact@raywhiterealestate.com) */}
+        {currentView === 'replyportal' && (
+          <ReplyPortal
+            onBackToSite={() => handleNavigate('home')}
+            onNavigateToProperty={(propId) => {
+              const prop = PROPERTIES.find((p) => p.id === propId);
+              if (prop) {
+                setSelectedProperty(prop);
+              }
+            }}
+          />
+        )}
 
         {/* VIEW: ADMIN PORTAL (PROTECTED BY PASSCODE 000333999) */}
         {currentView === 'admin' && (
@@ -853,6 +784,7 @@ export default function App() {
             <AdminPortal
               onBackToSite={() => handleNavigate('home')}
               onNavigateToMediaUpload={() => handleNavigate('videos')}
+              onNavigateToReplyPortal={() => handleNavigate('replyportal')}
               onNavigateToProperty={(propId) => {
                 const prop = PROPERTIES.find((p) => p.id === propId);
                 if (prop) {

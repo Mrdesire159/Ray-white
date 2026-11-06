@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Lock,
   Mail,
   Bell,
   Sparkles,
@@ -241,14 +240,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
                     <button
                       type="button"
                       onClick={handleResetForAnother}
-                      className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-700 transition-colors cursor-pointer"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer border border-emerald-500 active:scale-95"
                     >
                       Update Preferences / Subscribe Another
                     </button>
                     <button
                       type="button"
                       onClick={() => onNavigate('buy')}
-                      className="px-5 py-2 bg-[#FFD200] hover:bg-[#E5BC00] text-neutral-950 font-black text-xs rounded-xl shadow-xs transition-transform active:scale-95 cursor-pointer flex items-center gap-1.5"
+                      className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl shadow-xs transition-transform active:scale-95 cursor-pointer flex items-center gap-1.5 border border-red-500 shadow-red-600/20"
                     >
                       <span>Explore Current Listings</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -319,21 +318,32 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
                       Select Property Types to Follow
                     </label>
                     <div className="flex flex-wrap gap-1.5">
-                      {availableCategories.map((cat) => {
+                      {availableCategories.map((cat, idx) => {
                         const isSelected = selectedCategories.includes(cat.id);
+                        // Distinct theme color when selected
+                        const selectedStyles = [
+                          'bg-blue-600 text-white font-bold shadow-xs border-blue-500 scale-102',
+                          'bg-emerald-600 text-white font-bold shadow-xs border-emerald-500 scale-102',
+                          'bg-red-600 text-white font-bold shadow-xs border-red-500 scale-102',
+                          'bg-sky-600 text-white font-bold shadow-xs border-sky-500 scale-102',
+                          'bg-teal-600 text-white font-bold shadow-xs border-teal-500 scale-102',
+                          'bg-rose-600 text-white font-bold shadow-xs border-rose-500 scale-102',
+                        ];
+                        const activeCls = selectedStyles[idx % selectedStyles.length];
+
                         return (
                           <button
                             key={cat.id}
                             type="button"
                             onClick={() => toggleCategory(cat.id)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
                               isSelected
-                                ? 'bg-[#FFD200] text-neutral-950 font-bold shadow-xs scale-102'
-                                : 'bg-neutral-900 text-neutral-400 border border-neutral-800 hover:border-neutral-700 hover:text-white'
+                                ? activeCls
+                                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-700 hover:text-white'
                             }`}
                           >
                             <span>{cat.label}</span>
-                            {isSelected && <Check className="w-3 h-3 text-neutral-950 stroke-[3]" />}
+                            {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
                           </button>
                         );
                       })}
@@ -345,7 +355,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
                     <button
                       type="button"
                       onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                      className="text-[11px] font-semibold text-neutral-400 hover:text-[#FFD200] flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="text-[11px] font-semibold text-neutral-400 hover:text-blue-400 flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                       <span>{showAdvancedOptions ? 'Hide Regional & Frequency Preferences' : 'Customize Region & Frequency'}</span>
@@ -362,7 +372,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
                         <select
                           value={region}
                           onChange={(e) => setRegion(e.target.value)}
-                          className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#FFD200] cursor-pointer"
+                          className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
                         >
                           {regionsList.map((r) => (
                             <option key={r} value={r}>
@@ -382,7 +392,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
                             onClick={() => setFrequency('instant')}
                             className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer ${
                               frequency === 'instant'
-                                ? 'bg-amber-400 text-neutral-950'
+                                ? 'bg-blue-600 text-white font-black shadow-xs'
                                 : 'bg-neutral-800 text-neutral-300 hover:text-white'
                             }`}
                           >
@@ -393,7 +403,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
                             onClick={() => setFrequency('weekly')}
                             className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer ${
                               frequency === 'weekly'
-                                ? 'bg-amber-400 text-neutral-950'
+                                ? 'bg-emerald-600 text-white font-black shadow-xs'
                                 : 'bg-neutral-800 text-neutral-300 hover:text-white'
                             }`}
                           >
@@ -404,21 +414,21 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
                     </div>
                   )}
 
-                  {/* Submit CTA */}
+                  {/* Submit CTA - Oceanic Royal Blue Theme */}
                   <div className="pt-2">
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-3 px-6 bg-[#FFD200] hover:bg-[#E5BC00] active:scale-98 disabled:opacity-60 text-neutral-950 font-black text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 active:scale-98 disabled:opacity-60 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer border border-blue-500"
                     >
                       {isSubmitting ? (
                         <>
-                          <RefreshCw className="w-4 h-4 animate-spin text-neutral-950" />
+                          <RefreshCw className="w-4 h-4 animate-spin text-white" />
                           <span>Registering Your VIP Alert Subscription...</span>
                         </>
                       ) : (
                         <>
-                          <Send className="w-4 h-4 text-neutral-950" />
+                          <Send className="w-4 h-4 text-white" />
                           <span>Subscribe for Property Alerts</span>
                         </>
                       )}
@@ -437,7 +447,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
         {/* ========================================================= */}
         {/* 2. MAIN FOOTER SITEMAP & CORPORATE LINKS                  */}
         {/* ========================================================= */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-neutral-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-neutral-900">
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center">
@@ -453,8 +463,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
             <p className="text-neutral-400 text-xs max-w-sm leading-relaxed">
               Founded in 1902 in Crows Nest, Queensland, Ray White has grown into Australasia’s largest real estate family with more than 1,000 franchised offices across Australia, New Zealand, and internationally.
             </p>
-            <div className="pt-2 text-neutral-500 text-[11px]">
-              Head Office: Level 26, 111 Eagle Street, Brisbane QLD 4000
+            <div className="pt-2 text-neutral-500 text-[11px] space-y-1">
+              <div>Head Office: Level 26, 111 Eagle Street, Brisbane QLD 4000</div>
+              <div className="flex items-center gap-1.5 text-neutral-400">
+                <span>Official Inquiries:</span>
+                <span className="text-[#FFD200] font-mono font-semibold">contact@raywhiterealestate.com</span>
+              </div>
             </div>
           </div>
 
@@ -527,14 +541,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
               </li>
               <li>
                 <button
-                  onClick={() => onNavigate('videos')}
-                  className="hover:text-white transition-colors cursor-pointer text-left"
-                >
-                  Video Storage &amp; 4K Tours
-                </button>
-              </li>
-              <li>
-                <button
                   onClick={() => onNavigate('contact')}
                   className="hover:text-white transition-colors cursor-pointer text-left"
                 >
@@ -543,36 +549,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAppraisal }) =
               </li>
               <li>
                 <button
-                  onClick={() => onNavigate('admin')}
-                  className="text-neutral-500 hover:text-amber-400 transition-colors cursor-pointer text-left font-medium flex items-center gap-1.5"
-                  title="Staff Operations (Restricted)"
+                  onClick={() => onNavigate('replyportal')}
+                  className="hover:text-[#FFD200] text-neutral-300 font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
                 >
-                  <Lock className="w-3 h-3 text-neutral-500" />
-                  <span>Staff Portal</span>
+                  <Mail className="w-3.5 h-3.5 text-[#FFD200]" />
+                  <span>Reply &amp; Message Portal</span>
                 </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact & Support */}
-          <div className="space-y-3">
-            <h4 className="text-white font-bold text-sm">Concierge</h4>
-            <ul className="space-y-2 text-neutral-400">
-              <li>
-                <span className="block text-neutral-500 text-[11px]">Direct Support:</span>
-                <a href="tel:1300729944" className="text-white font-bold hover:text-[#FFD200]">
-                  1300 729 944
-                </a>
-              </li>
-              <li>
-                <span className="block text-neutral-500 text-[11px]">Enquiries:</span>
-                <a href="mailto:info@raywhite.com" className="text-neutral-300 hover:text-white">
-                  info@raywhite.com
-                </a>
-              </li>
-              <li>
-                <span className="block text-neutral-500 text-[11px]">Hours:</span>
-                <span className="text-neutral-300">Mon - Fri: 8:00 AM - 6:00 PM</span>
               </li>
             </ul>
           </div>

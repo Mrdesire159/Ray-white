@@ -17,6 +17,15 @@ body {
 }
 
 /* Theme data attributes */
+[data-theme='sapphire-crimson-mint'] {
+  --theme-accent-gradient: linear-gradient(135deg, #1e40af 0%, #dc2626 50%, #34d399 100%);
+  --theme-primary: #1e40af;
+  --theme-red: #dc2626;
+  --theme-mint: #34d399;
+  --theme-highlight: #2563eb;
+  --theme-glow: rgba(37, 99, 235, 0.25);
+}
+
 [data-theme='vibrant-azure'] {
   --theme-accent-gradient: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #ffd200 100%);
   --theme-highlight: #3b82f6;

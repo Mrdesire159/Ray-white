@@ -22,6 +22,7 @@ import {
 import { Property, ChatMessage, Agent } from '../types/property';
 import { PROPERTIES } from '../data/properties';
 import { AGENTS } from '../data/agents';
+import { useRequests } from '../context/RequestContext';
 
 interface ChatbotProps {
   onSelectProperty: (property: Property) => void;
@@ -40,6 +41,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
   isOpenExternal,
   onCloseExternal,
 }) => {
+  const { addRequest, targetCustomEmail } = useRequests();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = isOpenExternal !== undefined ? isOpenExternal : internalIsOpen;
   const setIsOpen = (open: boolean) => {
@@ -293,7 +295,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                   <span>Ray White Concierge</span>
                   <span className="text-[10px] bg-[#FFD200]/20 text-[#FFD200] px-1.5 py-0.2 rounded font-bold">Online</span>
                 </h3>
-                <p className="text-[11px] text-neutral-400">Verified Advisory &amp; 3D Rolling Tours</p>
+                <p className="text-[10px] text-neutral-400 font-mono">Channel: {targetCustomEmail}</p>
               </div>
             </div>
 
@@ -532,6 +534,21 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!userPhoneInput) return;
+                  addRequest({
+                    type: 'contact',
+                    priority: 'urgent',
+                    targetEmail: targetCustomEmail,
+                    client: {
+                      name: 'Live Chat Visitor',
+                      phone: userPhoneInput,
+                      email: 'visitor.callback@client.raywhite.com',
+                      preferredContact: 'phone',
+                    },
+                    details: {
+                      subject: `Live Chat Callback Request for ${agentConnectModal.name}`,
+                      message: `Visitor requested priority callback with ${agentConnectModal.name} (${agentConnectModal.office}). Phone: ${userPhoneInput}`,
+                    },
+                  });
                   setAgentRequestSuccess(true);
                 }}
                 className="space-y-3"
