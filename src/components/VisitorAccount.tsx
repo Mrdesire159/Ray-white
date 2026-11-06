@@ -1,12 +1,61 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   hydrateSession,
-  signup,
   requestPasswordRecovery,
   updateUser,
   acceptInvite,
 } from "@netlify/identity";
-import { X, ArrowRight, LockKeyhole, Mail, Eye, EyeOff } from "lucide-react";
+import {
+  X,
+  ArrowRight,
+  LockKeyhole,
+  Mail,
+  Eye,
+  EyeOff,
+  Zap,
+  Check,
+} from "lucide-react";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const STRENGTH_COLOURS = [
+  "bg-neutral-200",
+  "bg-red-500",
+  "bg-amber-500",
+  "bg-lime-600",
+  "bg-emerald-600",
+];
+const COMMON_TYPOS: Record<string, string> = {
+  "gmial.com": "gmail.com",
+  "gmai.com": "gmail.com",
+  "gamil.com": "gmail.com",
+  "gmail.co": "gmail.com",
+  "hotmial.com": "hotmail.com",
+  "hotmail.co": "hotmail.com",
+  "outlok.com": "outlook.com",
+  "yaho.com": "yahoo.com",
+  "yahoo.co": "yahoo.com",
+  "icloud.co": "icloud.com",
+  "bigpond.co": "bigpond.com",
+};
+
+function passwordStrength(password: string, email: string) {
+  if (!password) return { score: 0, label: "" };
+  let score = 0;
+  if (password.length >= 10) score++;
+  if (password.length >= 14) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  const local = email.split("@")[0]?.toLowerCase();
+  const weak =
+    password.length < 10 ||
+    (!!local && local.length > 2 && password.toLowerCase().includes(local));
+  const level = weak ? 1 : Math.min(4, Math.max(2, score));
+  return {
+    score: level,
+    label: ["", "Too weak", "Fair", "Strong", "Excellent"][level],
+  };
+}
 
 export function VisitorAccount({
   onClose,
@@ -32,12 +81,18 @@ export function VisitorAccount({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [welcome, setWelcome] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
+  // Keep the latest close handler without re-running the focus setup, so
+  // background refreshes never steal focus or reset the form while typing.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
     dialog.current?.querySelector<HTMLInputElement>("input")?.focus();
     const handle = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
       if (e.key === "Tab") {
         const elements = dialog.current?.querySelectorAll<HTMLElement>(
           "button, input, a[href]",
@@ -59,7 +114,7 @@ export function VisitorAccount({
       document.removeEventListener("keydown", handle);
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
   useEffect(() => {
     if (!lockedUntil) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -73,7 +128,7 @@ export function VisitorAccount({
     const controller = new AbortController();
     setLockedUntil(0);
     const timer = setTimeout(async () => {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return;
+      if (!EMAIL_PATTERN.test(email.trim())) return;
       try {
         const response = await fetch("/.netlify/functions/portal", {
           method: "POST",
@@ -107,12 +162,31 @@ export function VisitorAccount({
         await requestPasswordRecovery(email);
         setNotice("Check your email for a link to reset your password.");
       } else if (mode === "signup") {
-        const user = await signup(email, password, { full_name: name });
-        if (user.confirmedAt) await onSuccess();
-        else
-          setNotice(
-            "Check your email to confirm your account, then return to send your enquiry. Your form stays on this page.",
+        const response = await fetch("/.netlify/functions/portal", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "visitor-signup",
+            name: name.trim(),
+            email: email.trim(),
+            password,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+          setWelcome(true);
+          await hydrateSession();
+          await onSuccess();
+        } else if (data.code === "exists" || data.code === "created") {
+          setMode("login");
+          setPassword("");
+          setError(data.error);
+        } else {
+          setError(
+            data.error || "Unable to create your account. Please try again.",
           );
+        }
       } else if (mode === "reset") {
         await updateUser({ password });
         await onSuccess();
@@ -151,8 +225,19 @@ export function VisitorAccount({
       setBusy(false);
     }
   }
-  const title =
-    mode === "signup"
+  const firstName = name.trim().split(/\s+/)[0];
+  const emailDomain = email.trim().toLowerCase().split("@")[1] || "";
+  const suggestion = COMMON_TYPOS[emailDomain]
+    ? `${email.trim().split("@")[0]}@${COMMON_TYPOS[emailDomain]}`
+    : "";
+  const emailInvalid =
+    emailTouched && !!email && !EMAIL_PATTERN.test(email.trim());
+  const strength = passwordStrength(password, email);
+  const signupReady =
+    !!name.trim() && EMAIL_PATTERN.test(email.trim()) && strength.score >= 2;
+  const title = welcome
+    ? `Welcome${firstName ? `, ${firstName}` : ""}.`
+    : mode === "signup"
       ? "Your private conversation starts here."
       : mode === "forgot"
         ? "Reset your password."
@@ -188,9 +273,16 @@ export function VisitorAccount({
             {title}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-neutral-500">
-            Sign in to send enquiries, read staff replies and receive private
-            notifications on any device.
+            {mode === "signup"
+              ? "Create your account in seconds to send enquiries, read staff replies and receive private notifications on any device."
+              : "Sign in to send enquiries, read staff replies and receive private notifications on any device."}
           </p>
+          {mode === "signup" && (
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-[#FFD200]">
+              <Zap size={14} aria-hidden="true" />
+              Instant access — no verification code needed
+            </p>
+          )}
           <form onSubmit={submit} className="mt-7 space-y-4">
             {mode === "signup" && (
               <label className="block text-sm font-semibold">
@@ -212,10 +304,31 @@ export function VisitorAccount({
                   required
                   type="email"
                   autoComplete="email"
-                  className="mt-1.5 w-full rounded-lg border border-neutral-300 px-3 py-3 font-normal"
+                  aria-invalid={emailInvalid || undefined}
+                  aria-describedby="email-hint"
+                  className={`mt-1.5 w-full rounded-lg border px-3 py-3 font-normal ${emailInvalid ? "border-red-500" : "border-neutral-300"}`}
                   value={email}
+                  onBlur={() => setEmailTouched(true)}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+                <span
+                  id="email-hint"
+                  className="block min-h-[1.25rem] pt-1 text-xs font-normal"
+                >
+                  {suggestion ? (
+                    <button
+                      type="button"
+                      className="text-neutral-700 underline underline-offset-2"
+                      onClick={() => setEmail(suggestion)}
+                    >
+                      Did you mean {suggestion}?
+                    </button>
+                  ) : emailInvalid ? (
+                    <span className="text-red-700">
+                      Enter an email like name@example.com.
+                    </span>
+                  ) : null}
+                </span>
               </label>
             )}
             {mode !== "forgot" && (
@@ -247,8 +360,30 @@ export function VisitorAccount({
                   </button>
                 </div>
                 {mode !== "login" && (
-                  <span className="text-xs font-normal text-neutral-500">
-                    Use at least 10 characters.
+                  <span className="block pt-2 text-xs font-normal text-neutral-500">
+                    <span className="flex gap-1" aria-hidden="true">
+                      {[1, 2, 3, 4].map((i) => (
+                        <span
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors ${strength.score >= i ? STRENGTH_COLOURS[strength.score] : "bg-neutral-200"}`}
+                        />
+                      ))}
+                    </span>
+                    <span
+                      className="mt-1.5 flex justify-between"
+                      aria-live="polite"
+                    >
+                      <span>
+                        {password.length >= 10 ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-700">
+                            <Check size={12} /> 10+ characters
+                          </span>
+                        ) : (
+                          `Use at least 10 characters (${password.length}/10).`
+                        )}
+                      </span>
+                      <span className="font-semibold">{strength.label}</span>
+                    </span>
                   </span>
                 )}
               </label>
@@ -281,13 +416,19 @@ export function VisitorAccount({
               </p>
             )}
             <button
-              disabled={busy || (mode === "login" && remaining > 0)}
+              disabled={
+                busy ||
+                (mode === "login" && remaining > 0) ||
+                (mode === "signup" && !signupReady)
+              }
               className="w-full bg-[#FFD200] hover:bg-amber-300 rounded-lg py-3.5 font-bold flex items-center justify-center gap-3 disabled:opacity-50"
             >
               {busy
-                ? "Please wait…"
+                ? mode === "signup"
+                  ? "Creating your account…"
+                  : "Please wait…"
                 : mode === "signup"
-                  ? "Create account"
+                  ? "Create account & continue"
                   : mode === "forgot"
                     ? "Send reset link"
                     : ["reset", "invite"].includes(mode)

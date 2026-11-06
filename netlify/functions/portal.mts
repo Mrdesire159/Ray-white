@@ -4,7 +4,7 @@ import {
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
-import { getUser, login, AuthError } from "@netlify/identity";
+import { getUser, login, admin, AuthError } from "@netlify/identity";
 import type { Context } from "@netlify/functions";
 import { and, eq, gt, lt, lte, or, sql, desc, asc } from "drizzle-orm";
 import { db } from "../../db/index.js";
@@ -115,6 +115,80 @@ export default async (req: Request, context: Context) => {
       return json({ error: "Invalid request." }, 400);
     }
     const action = req.method === "GET" ? "list" : body.action;
+    if (action === "visitor-signup") {
+      const email = text(body.email, 254).toLowerCase();
+      const name = text(body.name, 120);
+      const password = typeof body.password === "string" ? body.password : "";
+      if (!name) return json({ error: "Enter your name." }, 400);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        return json({ error: "Enter a valid email address." }, 400);
+      if (password.length < 10 || password.length > 1024)
+        return json({ error: "Use a password of at least 10 characters." }, 400);
+      const localPart = email.split("@")[0];
+      if (localPart.length > 2 && password.toLowerCase().includes(localPart))
+        return json(
+          { error: "Choose a password that doesn't contain your email name." },
+          400,
+        );
+      // Limit new accounts per network to deter automated sign-ups.
+      const key = `visitor-signup:${hash(context.ip || "unknown")}`;
+      const now = new Date();
+      const [attempt] = await db
+        .insert(adminAttempts)
+        .values({ key, attempts: 1, expiresAt: new Date(now.getTime() + 3600000) })
+        .onConflictDoUpdate({
+          target: adminAttempts.key,
+          set: {
+            attempts: sql`CASE WHEN ${adminAttempts.expiresAt} <= ${now} THEN 1 ELSE ${adminAttempts.attempts} + 1 END`,
+            expiresAt: sql`CASE WHEN ${adminAttempts.expiresAt} <= ${now} THEN ${new Date(now.getTime() + 3600000)} ELSE ${adminAttempts.expiresAt} END`,
+          },
+        })
+        .returning();
+      if (attempt.attempts > 6)
+        return json(
+          { error: "Too many new accounts from this network. Try again later." },
+          429,
+        );
+      try {
+        await admin.createUser({
+          email,
+          password,
+          data: { user_metadata: { full_name: name } },
+        });
+      } catch (error) {
+        const duplicate =
+          error instanceof AuthError &&
+          (error.status === 422 || /already|registered|exists/i.test(error.message));
+        if (!duplicate)
+          return json(
+            { error: "Account creation is unavailable. Please try again shortly." },
+            503,
+          );
+        // The email is already registered: sign in if the password matches.
+        try {
+          await login(email, password);
+          return json({ ok: true, existing: true });
+        } catch {
+          return json(
+            {
+              error:
+                "An account with this email already exists. Sign in or reset your password.",
+              code: "exists",
+            },
+            409,
+          );
+        }
+      }
+      try {
+        await login(email, password);
+      } catch {
+        return json(
+          { error: "Your account was created. Please sign in to continue.", code: "created" },
+          503,
+        );
+      }
+      return json({ ok: true });
+    }
     if (action === "visitor-login" || action === "visitor-login-status") {
       const email = text(body.email, 254).toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
