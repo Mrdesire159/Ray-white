@@ -20,21 +20,21 @@ export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) =
       name: 'Ray White Double Bay (Flagship)',
       address: 'Shop 1, 350 New South Head Road, Double Bay NSW 2028',
       phone: '+61 (02) 9363 1100',
-      email: 'doublebay.nsw@raywhite.com',
+      email: 'contact@raywhiterealestate.live',
       hours: 'Mon – Fri: 8:30 AM – 5:30 PM | Sat: 9:00 AM – 4:00 PM',
     },
     {
       name: 'Ray White Sydney City Fringe',
       address: '228 Crown Street, Surry Hills NSW 2010',
       phone: '+61 (02) 9363 1144',
-      email: 'surryhills.nsw@raywhite.com',
+      email: 'contact@raywhiterealestate.live',
       hours: 'Mon – Fri: 9:00 AM – 5:30 PM | Sat: 9:00 AM – 3:00 PM',
     },
     {
       name: 'Ray White Lower North Shore',
       address: '102 Glover Street, Mosman NSW 2088',
       phone: '+61 (02) 9363 1188',
-      email: 'mosman.nsw@raywhite.com',
+      email: 'contact@raywhiterealestate.live',
       hours: 'Mon – Fri: 8:30 AM – 5:30 PM | Sat: 9:00 AM – 4:00 PM',
     },
   ];
@@ -149,9 +149,17 @@ export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) =
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-neutral-400 shrink-0" />
-                    <a href={`mailto:${off.email}`} className="hover:text-neutral-900">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOffice(off.name);
+                        document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                      className="hover:text-neutral-900 underline-offset-2 hover:underline cursor-pointer text-left"
+                      title="Send a message to this office"
+                    >
                       {off.email}
-                    </a>
+                    </button>
                   </div>
                   <div className="flex items-center gap-2 text-neutral-500 pt-1">
                     <Clock className="w-4 h-4 text-neutral-400 shrink-0" />
@@ -198,7 +206,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) =
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-3.5">
+              <form id="contact-form" onSubmit={handleSubmit} className="space-y-3.5 scroll-mt-24">
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 mb-1">
                     Full Name *

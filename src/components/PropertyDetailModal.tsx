@@ -740,13 +740,17 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     <Phone className="w-3.5 h-3.5 text-white" />
                     <span>Call Agent</span>
                   </a>
-                  <a
-                    href={`mailto:${agent.email}?subject=Inquiry on ${property.address}`}
-                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs shadow-emerald-600/20 active:scale-95"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInquirySubmitted(false);
+                      document.getElementById('property-enquiry-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs shadow-emerald-600/20 active:scale-95 cursor-pointer"
                   >
                     <Mail className="w-3.5 h-3.5 text-white" />
                     <span>Email Agent</span>
-                  </a>
+                  </button>
                 </div>
 
                 {/* Instant QR Code Mobile Save Card */}
@@ -785,7 +789,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 </button>
 
                 {/* Contact / Inquiry Form */}
-                <div className="pt-2">
+                <div id="property-enquiry-form" className="pt-2">
                   <h5 className="font-bold text-xs uppercase tracking-wider text-neutral-600 mb-3">
                     Enquire on this property
                   </h5>
@@ -794,7 +798,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs space-y-2">
                       <div className="flex items-center gap-1.5 font-bold text-emerald-900">
                         <Check className="w-4 h-4 text-emerald-600" />
-                        <span>Enquiry Sent to contact@raywhiterealestate.com!</span>
+                        <span>Enquiry Sent to contact@raywhiterealestate.live!</span>
                       </div>
                       <p>
                         Thank you for your interest. Your message has been routed to our central inbox and assigned to {agent.name}. We will contact you shortly.
@@ -853,7 +857,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                         Send Enquiry
                       </button>
                       <div className="text-[10px] text-neutral-400 text-center font-mono">
-                        Direct Route: contact@raywhiterealestate.com
+                        Direct Route: contact@raywhiterealestate.live
                       </div>
                     </form>
                   )}

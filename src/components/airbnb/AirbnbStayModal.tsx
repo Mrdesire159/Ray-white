@@ -76,7 +76,7 @@ Nightly Rate: $${stay.pricePerNight} AUD/night
 Estimated Total: $${totalPrice.toLocaleString()} AUD
 Client Notes: ${clientNote.trim() || 'No special requests.'}`;
 
-    // Add to shared requests pipeline routed to contact@raywhiterealestate.com
+    // Add to shared requests pipeline routed to contact@raywhiterealestate.live
     const requestId = await addRequest({
       type: 'contact',
       priority: 'high',

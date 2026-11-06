@@ -335,13 +335,14 @@ export const AgentDirectory: React.FC<AgentDirectoryProps> = ({
                       <div className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
                         Official Custom Email
                       </div>
-                      <a
-                        href={`mailto:${agent.email}`}
-                        className="text-xs font-mono font-bold text-neutral-900 hover:text-blue-700 transition-colors block truncate"
-                        title="Click to write an email"
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAgentForContact(agent)}
+                        className="text-xs font-mono font-bold text-neutral-900 hover:text-blue-700 transition-colors block truncate cursor-pointer text-left max-w-full"
+                        title="Send a message"
                       >
                         {agent.email}
-                      </a>
+                      </button>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -460,13 +461,14 @@ export const AgentDirectory: React.FC<AgentDirectoryProps> = ({
                   <Phone className="w-3.5 h-3.5 text-neutral-700" />
                   <span>Call Agent</span>
                 </a>
-                <a
-                  href={`mailto:${agent.email}?subject=Inquiry for ${agent.name}`}
-                  className="py-2.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setSelectedAgentForContact(agent)}
+                  className="py-2.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5 text-blue-700" />
                   <span>Email Custom</span>
-                </a>
+                </button>
                 <button
                   type="button"
                   onClick={() => {

@@ -12,7 +12,8 @@ import {
   Award,
   ShieldCheck,
   Building2,
-  Maximize2
+  Maximize2,
+  Pause,
 } from 'lucide-react';
 
 interface CinematicWelcomeOverlayProps {
@@ -25,6 +26,8 @@ interface CinematicWelcomeOverlayProps {
   onExploreListings?: () => void;
   onOpenAppraisal?: () => void;
   onToggleFullscreen?: () => void;
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
 }
 
 export const CinematicWelcomeOverlay: React.FC<CinematicWelcomeOverlayProps> = ({
@@ -37,6 +40,8 @@ export const CinematicWelcomeOverlay: React.FC<CinematicWelcomeOverlayProps> = (
   onExploreListings,
   onOpenAppraisal,
   onToggleFullscreen,
+  isPlaying = false,
+  onTogglePlay,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isTheaterModalOpen, setIsTheaterModalOpen] = useState(false);
@@ -218,6 +223,26 @@ export const CinematicWelcomeOverlay: React.FC<CinematicWelcomeOverlayProps> = (
 
           {/* Full Screen Cinematic Theater Experience Trigger */}
           <div className="flex items-center gap-2">
+            {onTogglePlay && (
+              <button
+                type="button"
+                onClick={onTogglePlay}
+                aria-pressed={isPlaying}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs border backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-lg ${
+                  isPlaying
+                    ? 'bg-[#FFD200] text-neutral-950 border-[#FFD200]'
+                    : 'bg-neutral-950/80 hover:bg-neutral-900 text-white border-white/20 hover:border-[#FFD200]'
+                }`}
+                title={isPlaying ? 'Pause video' : 'Play video'}
+              >
+                {isPlaying ? (
+                  <Pause className="w-3.5 h-3.5" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 text-[#FFD200]" />
+                )}
+                <span>{isPlaying ? 'Pause video' : 'Play video'}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setIsTheaterModalOpen(true)}

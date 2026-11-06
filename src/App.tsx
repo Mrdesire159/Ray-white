@@ -881,7 +881,7 @@ export default function App() {
           <ContactView onOpenReplyPortal={() => handleNavigate('replyportal')} />
         )}
 
-        {/* VIEW: REPLY CHAT PORTAL (MESSAGES DIRECTED TO contact@raywhiterealestate.com) */}
+        {/* VIEW: REPLY CHAT PORTAL (MESSAGES DIRECTED TO contact@raywhiterealestate.live) */}
         {currentView === 'replyportal' && (
           <ReplyPortal
             onBackToSite={() => handleNavigate('home')}

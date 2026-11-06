@@ -30,7 +30,8 @@ export const VillaCinematicDisplay: React.FC<VillaCinematicDisplayProps> = ({
 
   // States
   const [displayMode, setDisplayMode] = useState<DisplayMode>('photo');
-  const [isPlaying, setIsPlaying] = useState(true);
+  // Motion stays off until the visitor asks for it, so the picture shows as a still photo.
+  const [isPlaying, setIsPlaying] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(0.5); // Default to smooth slow-mo
   const [timelineProgress, setTimelineProgress] = useState(0);
   const [atmosphere, setAtmosphere] = useState<AtmosphereMode>('day');
@@ -43,7 +44,7 @@ export const VillaCinematicDisplay: React.FC<VillaCinematicDisplayProps> = ({
   const displayModeRef = useRef<DisplayMode>('photo');
   displayModeRef.current = displayMode;
 
-  const isPlayingRef = useRef(true);
+  const isPlayingRef = useRef(false);
   isPlayingRef.current = isPlaying;
 
   const speedMultiplierRef = useRef(0.5);
@@ -330,6 +331,8 @@ export const VillaCinematicDisplay: React.FC<VillaCinematicDisplayProps> = ({
 
   const handleToggleDisplayMode = () => {
     setDisplayMode((prev) => (prev === 'photo' ? '3d' : 'photo'));
+    // Returning to the photo pauses the motion; choosing 3D is an explicit request to play.
+    setIsPlaying(displayMode === 'photo');
   };
 
   // Free orbit drag events for 3D mode
@@ -450,6 +453,8 @@ export const VillaCinematicDisplay: React.FC<VillaCinematicDisplayProps> = ({
         onExploreListings={onExploreListings}
         onOpenAppraisal={onOpenAppraisal}
         onToggleFullscreen={toggleFullscreen}
+        isPlaying={isPlaying}
+        onTogglePlay={togglePlay}
       />
     </div>
   );
