@@ -39,11 +39,11 @@ export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) =
     },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email) return;
 
-    addRequest({
+    const requestId = await addRequest({
       type: 'contact',
       priority: 'normal',
       targetEmail: targetCustomEmail,
@@ -59,6 +59,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) =
         preferredOffice: office,
       },
     });
+    if (!requestId) return;
 
     setSubmitted(true);
   };
@@ -84,7 +85,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) =
               {targetCustomEmail}
             </div>
             <p className="text-xs text-neutral-300 mt-1 max-w-xl leading-relaxed">
-              Every message and enquiry sent from this site routes directly to <strong className="text-white font-mono">{targetCustomEmail}</strong>. You can view conversations and dispatch live replies within our in-site Reply Portal.
+              Send your enquiry to our team on this site. Sign in to keep your conversation private and receive a notification in your inbox when we reply.
             </p>
           </div>
         </div>

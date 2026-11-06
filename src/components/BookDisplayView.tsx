@@ -27,11 +27,11 @@ interface BookDisplayViewProps {
 // Colors for book spines on the bookshelf
 const SPINE_THEMES = [
   { bg: 'from-amber-950 to-neutral-900', border: 'border-amber-800', accent: '#FFD200', text: 'text-amber-100', ribbon: '#FFD200' },
-  { bg: 'from-slate-900 to-neutral-950', border: 'border-slate-700', accent: '#38BDF8', text: 'text-slate-100', ribbon: '#38BDF8' },
-  { bg: 'from-emerald-950 to-neutral-900', border: 'border-emerald-800', accent: '#34D399', text: 'text-emerald-100', ribbon: '#34D399' },
-  { bg: 'from-rose-950 to-neutral-950', border: 'border-rose-900', accent: '#FB7185', text: 'text-rose-100', ribbon: '#FB7185' },
+  { bg: 'from-slate-900 to-neutral-950', border: 'border-slate-700', accent: '#a5a5a5', text: 'text-slate-100', ribbon: '#a5a5a5' },
+  { bg: 'from-emerald-950 to-neutral-900', border: 'border-emerald-800', accent: '#adadad', text: 'text-emerald-100', ribbon: '#adadad' },
+  { bg: 'from-rose-950 to-neutral-950', border: 'border-rose-900', accent: '#909090', text: 'text-rose-100', ribbon: '#909090' },
   { bg: 'from-zinc-900 to-stone-950', border: 'border-zinc-700', accent: '#FFD200', text: 'text-zinc-100', ribbon: '#FFD200' },
-  { bg: 'from-indigo-950 to-neutral-900', border: 'border-indigo-800', accent: '#A5B4FC', text: 'text-indigo-100', ribbon: '#A5B4FC' },
+  { bg: 'from-indigo-950 to-neutral-900', border: 'border-indigo-800', accent: '#b6b6b6', text: 'text-indigo-100', ribbon: '#b6b6b6' },
 ];
 
 export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
@@ -248,9 +248,9 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
           </div>
 
           {/* Realistic Bookshelf Container */}
-          <div className="bg-[#2a1d17] p-6 sm:p-10 rounded-3xl border-8 border-[#3b2a21] shadow-2xl relative overflow-hidden">
+          <div className="bg-[#1f1f1f] p-6 sm:p-10 rounded-3xl border-8 border-[#2d2d2d] shadow-2xl relative overflow-hidden">
             {/* Ambient Woodgrain Backing & Warm Spotlight */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#1b120e] via-[#2a1d17] to-[#150d0a] opacity-95 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#141414] via-[#1f1f1f] to-[#0e0e0e] opacity-95 pointer-events-none" />
             <div className="absolute top-0 left-1/4 right-1/4 h-32 bg-amber-500/5 blur-3xl pointer-events-none" />
 
             {/* Bookshelf Row (Divided into 2 tiers if many houses) */}
@@ -280,7 +280,7 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
                       >
                         {/* Book Spine (Vertical Hardcover Book) */}
                         <div
-                          className={`w-14 sm:w-16 h-72 sm:h-80 rounded-t-md bg-gradient-to-r ${theme.bg} border-l-2 border-r-2 ${theme.border} shadow-[0_10px_25px_rgba(0,0,0,0.6)] flex flex-col justify-between items-center py-4 px-1.5 relative select-none transition-shadow group-hover:shadow-[0_15px_30px_rgba(255,210,0,0.25)]`}
+                          className={`w-14 sm:w-16 h-72 sm:h-80 rounded-t-md bg-gradient-to-r ${theme.bg} border-l-2 border-r-2 ${theme.border} shadow-[0_10px_25px_rgba(0,0,0,0.6)] flex flex-col justify-between items-center py-4 px-1.5 relative select-none transition-shadow group-hover:shadow-[0_15px_30px_rgba(204,204,204,0.25)]`}
                         >
                           {/* Gold Foil Top Band */}
                           <div className="w-full flex flex-col items-center gap-1 border-b border-amber-500/20 pb-2">
@@ -350,7 +350,7 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
                 </div>
 
                 {/* Wooden Shelf Surface Plank */}
-                <div className="w-full h-5 bg-gradient-to-b from-[#4a3429] via-[#3b271d] to-[#251710] rounded-sm shadow-[0_8px_15px_rgba(0,0,0,0.8)] border-t border-amber-600/30 flex items-center justify-between px-6">
+                <div className="w-full h-5 bg-gradient-to-b from-[#383838] via-[#2b2b2b] to-[#191919] rounded-sm shadow-[0_8px_15px_rgba(0,0,0,0.8)] border-t border-amber-600/30 flex items-center justify-between px-6">
                   <span className="text-[9px] font-serif uppercase tracking-widest text-amber-200/50">
                     Ray White Rare Books &amp; Architectural Folios
                   </span>
@@ -364,7 +364,7 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
 
       {/* MODE 2: THE 2-PAGE OPEN MONOGRAPH SPREAD */}
       {viewMode === 'reader' && (
-        <div className="relative bg-[#2B2927] rounded-3xl p-3 sm:p-6 shadow-2xl border-4 border-[#3D3A37] overflow-hidden">
+        <div className="relative bg-[#292929] rounded-3xl p-3 sm:p-6 shadow-2xl border-4 border-[#3a3a3a] overflow-hidden">
           {/* Silk Bookmark Ribbon */}
           <div className="absolute top-0 right-16 sm:right-24 w-6 h-28 bg-[#FFD200] shadow-lg transform -skew-y-3 z-30 pointer-events-none flex flex-col justify-end items-center pb-2">
             <span className="text-[8px] font-extrabold uppercase tracking-tighter text-neutral-950 transform rotate-90">
@@ -373,14 +373,14 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
           </div>
 
           {/* The Open Book Canvas with Spine Shadow */}
-          <div className="bg-[#FAF7F2] rounded-2xl shadow-inner grid grid-cols-1 lg:grid-cols-12 min-h-[640px] relative overflow-hidden border border-[#E8E2D8]">
+          <div className="bg-[#FAF7F2] rounded-2xl shadow-inner grid grid-cols-1 lg:grid-cols-12 min-h-[640px] relative overflow-hidden border border-[#e3e3e3]">
             {/* Spine Crease Center Line on Large Screens */}
             <div className="hidden lg:block absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-8 bg-gradient-to-r from-black/10 via-black/25 to-transparent z-20 pointer-events-none" />
 
             {/* LEFT PAGE: The Architectural Plate (6 Cols) */}
-            <div className="lg:col-span-6 p-6 sm:p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E8E2D8] relative bg-[#FCFAF7]">
+            <div className="lg:col-span-6 p-6 sm:p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#e3e3e3] relative bg-[#FCFAF7]">
               <div>
-                <div className="flex items-center justify-between text-[11px] font-bold tracking-widest uppercase text-neutral-400 pb-3 border-b border-[#E8E2D8]">
+                <div className="flex items-center justify-between text-[11px] font-bold tracking-widest uppercase text-neutral-400 pb-3 border-b border-[#e3e3e3]">
                   <span>Plate No. {currentPage + 1}</span>
                   <span>{currentProperty.suburb} Portfolio</span>
                 </div>
@@ -426,7 +426,7 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
               </div>
 
               {/* Bottom Caption & Folio Number */}
-              <div className="pt-6 border-t border-[#E8E2D8] mt-6 flex items-end justify-between text-xs text-neutral-500">
+              <div className="pt-6 border-t border-[#e3e3e3] mt-6 flex items-end justify-between text-xs text-neutral-500">
                 <div>
                   <div className="font-serif italic text-neutral-800 text-sm">
                     &ldquo;{currentProperty.title}&rdquo;
@@ -443,7 +443,7 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
             <div className="lg:col-span-6 p-6 sm:p-8 lg:p-10 flex flex-col justify-between relative bg-[#FAF7F2]">
               <div className="space-y-6">
                 {/* Top Folio Header */}
-                <div className="flex items-center justify-between text-[11px] font-bold tracking-widest uppercase text-neutral-400 pb-3 border-b border-[#E8E2D8]">
+                <div className="flex items-center justify-between text-[11px] font-bold tracking-widest uppercase text-neutral-400 pb-3 border-b border-[#e3e3e3]">
                   <span>Ray White Monograph · Vol. {currentPage + 1}</span>
                   <span className="text-neutral-700 font-semibold">{currentProperty.type}</span>
                 </div>
@@ -571,7 +571,7 @@ export const BookDisplayView: React.FC<BookDisplayViewProps> = ({
               </div>
 
               {/* Bottom Actions and Agent Sign-off */}
-              <div className="pt-6 border-t border-[#E8E2D8] mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="pt-6 border-t border-[#e3e3e3] mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <img
                     src={agent.avatar}

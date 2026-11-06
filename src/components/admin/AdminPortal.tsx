@@ -69,7 +69,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     bulkApprove,
     bulkDecline,
     addRequest,
-    resetToDefaults,
     logoutAdmin,
   } = useRequests();
 
@@ -402,18 +401,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             <div className="bg-neutral-900/90 p-3 rounded-xl border border-neutral-800 col-span-2 sm:col-span-4 lg:col-span-1">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Total Inquiries</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm('Reset request dataset to default sample values?')) {
-                      resetToDefaults();
-                    }
-                  }}
-                  className="text-[10px] text-neutral-400 hover:text-white underline cursor-pointer"
-                  title="Reload default sample requests"
-                >
-                  Reset Sample
-                </button>
+
               </div>
               <div className="text-2xl font-black text-white mt-1 tabular-nums">
                 {requests.length}

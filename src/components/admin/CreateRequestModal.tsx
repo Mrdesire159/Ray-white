@@ -34,7 +34,7 @@ interface CreateRequestModalProps {
       preferredOffice?: string;
     };
     assignedAgentId?: string;
-  }) => void;
+  }) => Promise<string | null>;
 }
 
 export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
@@ -42,7 +42,6 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
   onClose,
   onCreate,
 }) => {
-  if (!isOpen) return null;
 
   const [type, setType] = useState<RequestType>('appraisal');
   const [priority, setPriority] = useState<RequestPriority>('normal');
@@ -65,7 +64,9 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
   const [message, setMessage] = useState('');
   const [assignedAgentId, setAssignedAgentId] = useState(AGENTS[0].id);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim() || !clientEmail.trim() || !clientPhone.trim()) return;
 
@@ -89,7 +90,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
       };
     }
 
-    onCreate({
+    const id = await onCreate({
       type,
       priority,
       client: {
@@ -110,7 +111,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
       assignedAgentId,
     });
 
-    onClose();
+    if (id) onClose();
   };
 
   return (

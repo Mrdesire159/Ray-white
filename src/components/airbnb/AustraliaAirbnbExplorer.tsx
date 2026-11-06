@@ -93,7 +93,7 @@ export const AustraliaAirbnbExplorer: React.FC<AustraliaAirbnbExplorerProps> = (
   }, [activeRegion, searchQuery, maxPriceFilter, minGuests, onlySuperhost, onlyGuestFavorite, sortBy]);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#22252A] pb-16">
+    <div className="min-h-screen bg-[#f9f9f9] text-[#22252A] pb-16">
       {/* 1. Header Banner */}
       <section className="bg-neutral-950 text-white pt-8 pb-10 border-b border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">

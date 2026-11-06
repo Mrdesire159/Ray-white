@@ -340,14 +340,14 @@ export const PropertyVideoStorage: React.FC<PropertyVideoStorageProps> = ({
     }
   };
 
-  // Verify Admin Passcode (000333999) to grant immediate upload privileges
-  const handleVerifyAdminPasscode = (e: React.FormEvent) => {
+  // Verify Admin Passcode (staff access code) to grant immediate upload privileges
+  const handleVerifyAdminPasscode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminPasscodeInput.trim()) {
       setAdminAuthError('Please enter the administrative master passcode.');
       return;
     }
-    const isSuccess = loginAdmin(adminPasscodeInput);
+    const isSuccess = await loginAdmin(adminPasscodeInput);
     if (isSuccess) {
       setAdminAuthError(null);
       setIsAdminAuthModalOpen(false);
@@ -1854,7 +1854,7 @@ export const PropertyVideoStorage: React.FC<PropertyVideoStorageProps> = ({
               <div>
                 <span className="font-bold block">Master Passcode Required</span>
                 <span className="text-[11px] text-amber-800">
-                  Authorized Admin Passcode: <code className="font-mono font-bold bg-amber-200/80 px-1 py-0.5 rounded text-neutral-950">000333999</code>
+                  Staff access is verified securely.
                 </span>
               </div>
             </div>
@@ -1879,13 +1879,15 @@ export const PropertyVideoStorage: React.FC<PropertyVideoStorageProps> = ({
                       setAdminPasscodeInput(e.target.value);
                       if (adminAuthError) setAdminAuthError(null);
                     }}
-                    placeholder="Enter master passcode (000333999)"
+                    placeholder="Enter staff access code"
                     autoFocus
                     className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-3.5 py-2.5 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#FFD200]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowAdminPasscode(!showAdminPasscode)}
+                aria-label={showAdminPasscode ? "Hide password" : "Show password"}
+                aria-pressed={showAdminPasscode}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
                   >
                     {showAdminPasscode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

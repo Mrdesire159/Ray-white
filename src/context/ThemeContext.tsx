@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from "react";
 
-export type ThemeId = 'sapphire-crimson-mint' | 'vibrant-azure' | 'emerald-oasis' | 'sunset-coral' | 'cosmic-violet';
-
+export type ThemeId = "charcoal-gold";
 export interface ThemeConfig {
   id: ThemeId;
   name: string;
@@ -16,147 +15,50 @@ export interface ThemeConfig {
     glowColor: string;
     pillBg: string;
     pillText: string;
-    previewDots: [string, string, string];
+    previewDots: [string, string];
   };
 }
-
-export const THEMES: Record<ThemeId, ThemeConfig> = {
-  'sapphire-crimson-mint': {
-    id: 'sapphire-crimson-mint',
-    name: 'Sapphire, Crimson & Light Mint',
-    subtitle: 'Oceanic Blue, Bold Crimson & Light Mint Green',
-    badge: '💎 Unique Trio Harmony',
-    colors: {
-      primary: '#1E40AF', // Royal Oceanic Blue
-      secondary: '#DC2626', // Bold Crimson Red
-      accent: '#34D399', // Fresh Light Mint Green
-      heroGradient: 'from-slate-950 via-[#0c1a38] to-[#132c54]',
-      cardBorder: 'border-blue-500/30',
-      glowColor: 'rgba(37, 99, 235, 0.25)',
-      pillBg: 'bg-blue-500/15',
-      pillText: 'text-blue-400',
-      previewDots: ['#2563EB', '#DC2626', '#34D399'],
-    },
-  },
-  'vibrant-azure': {
-    id: 'vibrant-azure',
-    name: 'Prestige Azure & Gold',
-    subtitle: 'Oceanic Sapphire with Radiant Gold & Emerald',
-    badge: '🌟 Vibrant Prestige',
-    colors: {
-      primary: '#1E3A8A', // Blue 900
-      secondary: '#FFD200', // Ray White Gold
-      accent: '#0D9488', // Teal 600
-      heroGradient: 'from-slate-950 via-[#0a1532] to-[#0f1d3e]',
-      cardBorder: 'border-blue-500/30',
-      glowColor: 'rgba(59, 130, 246, 0.25)',
-      pillBg: 'bg-blue-500/15',
-      pillText: 'text-blue-400',
-      previewDots: ['#2563EB', '#FFD200', '#10B981'],
-    },
-  },
-  'emerald-oasis': {
-    id: 'emerald-oasis',
-    name: 'Emerald Coast & Mint',
-    subtitle: 'Lush Botanical Jade & Oceanic Cyan',
-    badge: '🌿 Emerald Oasis',
-    colors: {
-      primary: '#064E3B', // Emerald 900
-      secondary: '#10B981', // Emerald 500
-      accent: '#F59E0B', // Amber 500
-      heroGradient: 'from-slate-950 via-[#06241b] to-[#0a3326]',
-      cardBorder: 'border-emerald-500/30',
-      glowColor: 'rgba(16, 185, 129, 0.25)',
-      pillBg: 'bg-emerald-500/15',
-      pillText: 'text-emerald-400',
-      previewDots: ['#059669', '#10B981', '#F59E0B'],
-    },
-  },
-  'sunset-coral': {
-    id: 'sunset-coral',
-    name: 'Pacific Sunset & Coral',
-    subtitle: 'Warm Terracotta, Amber Glow & Rose Quartz',
-    badge: '🌅 Sunset Coral',
-    colors: {
-      primary: '#831843', // Pink 900
-      secondary: '#F97316', // Orange 500
-      accent: '#F43F5E', // Rose 500
-      heroGradient: 'from-slate-950 via-[#2a0e22] to-[#3a1523]',
-      cardBorder: 'border-rose-500/30',
-      glowColor: 'rgba(244, 63, 94, 0.25)',
-      pillBg: 'bg-rose-500/15',
-      pillText: 'text-rose-400',
-      previewDots: ['#F97316', '#F43F5E', '#FBBF24'],
-    },
-  },
-  'cosmic-violet': {
-    id: 'cosmic-violet',
-    name: 'Cosmic Violet & Cyan',
-    subtitle: 'Royal Amethyst, Electric Magenta & Cyan',
-    badge: '🌌 Cosmic Violet',
-    colors: {
-      primary: '#4C1D95', // Violet 900
-      secondary: '#8B5CF6', // Violet 500
-      accent: '#06B6D4', // Cyan 500
-      heroGradient: 'from-slate-950 via-[#1b0d33] to-[#261042]',
-      cardBorder: 'border-violet-500/30',
-      glowColor: 'rgba(139, 92, 246, 0.25)',
-      pillBg: 'bg-violet-500/15',
-      pillText: 'text-violet-400',
-      previewDots: ['#8B5CF6', '#06B6D4', '#EC4899'],
-    },
+const theme: ThemeConfig = {
+  id: "charcoal-gold",
+  name: "Charcoal & Gold",
+  subtitle: "Two colors. One consistent identity.",
+  badge: "Ray White",
+  colors: {
+    primary: "#22252A",
+    secondary: "#FFD200",
+    accent: "#FFD200",
+    heroGradient: "from-neutral-950 via-neutral-900 to-neutral-800",
+    cardBorder: "border-neutral-300",
+    glowColor: "rgba(34, 37, 42, 0.15)",
+    pillBg: "bg-yellow-400/15",
+    pillText: "text-yellow-400",
+    previewDots: ["#22252A", "#FFD200"],
   },
 };
-
-interface ThemeContextType {
-  themeId: ThemeId;
-  theme: ThemeConfig;
-  setThemeId: (id: ThemeId) => void;
-  themesList: ThemeConfig[];
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeId, setThemeIdState] = useState<ThemeId>(() => {
-    try {
-      const saved = localStorage.getItem('raywhite_theme');
-      if (saved && saved in THEMES) {
-        return saved as ThemeId;
-      }
-    } catch {
-      // ignore
-    }
-    return 'sapphire-crimson-mint';
-  });
-
-  const setThemeId = (id: ThemeId) => {
-    setThemeIdState(id);
-    try {
-      localStorage.setItem('raywhite_theme', id);
-    } catch {
-      // ignore
-    }
-  };
-
-  const theme = THEMES[themeId];
-  const themesList = Object.values(THEMES);
-
+export const THEMES = { "charcoal-gold": theme };
+const ThemeContext = createContext({
+  themeId: theme.id,
+  theme,
+  themesList: [theme],
+  setThemeId: (_id: ThemeId) => {},
+});
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', themeId);
-  }, [themeId]);
-
+    document.documentElement.setAttribute("data-theme", "charcoal-gold");
+  }, []);
   return (
-    <ThemeContext.Provider value={{ themeId, theme, setThemeId, themesList }}>
+    <ThemeContext.Provider
+      value={{
+        themeId: theme.id,
+        theme,
+        themesList: [theme],
+        setThemeId: () => {},
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
 };
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
+export const useTheme = () => useContext(ThemeContext);

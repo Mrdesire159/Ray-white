@@ -54,11 +54,11 @@ export const AppraisalModal: React.FC<AppraisalModalProps> = ({ isOpen, onClose 
     setStep(2);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ownerName || !ownerEmail || !ownerPhone) return;
 
-    addRequest({
+    const requestId = await addRequest({
       type: 'appraisal',
       priority: 'high',
       client: {
@@ -80,6 +80,7 @@ export const AppraisalModal: React.FC<AppraisalModalProps> = ({ isOpen, onClose 
         preferredOffice: `Ray White ${suburb}`,
       },
     });
+    if (!requestId) return;
 
     setSubmitted(true);
   };

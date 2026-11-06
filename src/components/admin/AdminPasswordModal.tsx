@@ -18,6 +18,7 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+  const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,14 +33,17 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!password.trim()) {
-      setError('Please enter the administrative master passcode.');
+      setError('Please enter the staff access code.');
       return;
     }
 
-    const isSuccess = loginAdmin(password);
+    setBusy(true);
+    const isSuccess = await loginAdmin(password);
+    setBusy(false);
     if (isSuccess) {
       setError(null);
       onSuccess();
@@ -108,6 +112,8 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -128,6 +134,7 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
             </button>
             <button
               type="submit"
+            disabled={busy}
               className="flex-1 py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-xl text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>Unlock Portal</span>

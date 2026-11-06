@@ -522,7 +522,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
   }, [amortisationData, inspectYear, loanTermYears]);
 
   const lifetimePieData = useMemo(() => [
-    { name: 'Loan Principal', value: loanAmount, color: '#10b981' },
+    { name: 'Loan Principal', value: loanAmount, color: '#919191' },
     { name: 'Total Interest', value: metrics.totalInterest, color: '#f59e0b' },
   ], [loanAmount, metrics.totalInterest]);
 
@@ -1400,11 +1400,11 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                         backgroundColor: '#171717',
                         borderColor: '#404040',
                         borderRadius: '0.75rem',
-                        color: '#fff',
+                        color: '#ffffff',
                         fontSize: '11px',
                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
                       }}
-                      itemStyle={{ color: '#fff' }}
+                      itemStyle={{ color: '#ffffff' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -1927,15 +1927,15 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 data={stressCurveData}
                 margin={{ top: 20, right: 15, left: 10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f4" vertical={false} />
                 <XAxis
                   dataKey="hikeLabel"
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -1950,12 +1950,12 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 />
                 <ReferenceLine
                   x="+3.00%"
-                  stroke="#6366f1"
+                  stroke="#6f6f6f"
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
                   label={{
                     value: '🏛️ APRA +3.00% Buffer Benchmark',
-                    fill: '#4f46e5',
+                    fill: '#535353',
                     fontSize: 10,
                     position: 'top',
                   }}
@@ -1964,7 +1964,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   name="Base Monthly Repayment"
                   dataKey="basePayment"
                   stackId="stress"
-                  fill="#0284c7"
+                  fill="#6d6d6d"
                   radius={[0, 0, 0, 0]}
                 />
                 <Bar
@@ -1977,7 +1977,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   {stressCurveData.map((entry, index) => (
                     <Cell
                       key={`stress-cell-${index}`}
-                      fill={entry.isSelected ? '#ef4444' : entry.isApraBuffer ? '#6366f1' : '#f59e0b'}
+                      fill={entry.isSelected ? '#686868' : entry.isApraBuffer ? '#6f6f6f' : '#f59e0b'}
                     />
                   ))}
                 </Bar>
@@ -1987,16 +1987,16 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 data={amortisationData.schedule.filter((d) => d.year > 0)}
                 margin={{ top: 15, right: 15, left: 10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f4" vertical={false} />
                 <XAxis
                   dataKey="yearLabel"
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   interval={Math.max(0, Math.floor(loanTermYears / 8))}
                 />
                 <YAxis
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -2012,12 +2012,12 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 {amortisationData.crossoverYear && (
                   <ReferenceLine
                     x={`Yr ${amortisationData.crossoverYear}`}
-                    stroke="#6366f1"
+                    stroke="#6f6f6f"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
                       value: `⚡ Crossover Yr ${amortisationData.crossoverYear}`,
-                      fill: '#4f46e5',
+                      fill: '#535353',
                       fontSize: 10,
                       position: 'top',
                     }}
@@ -2033,7 +2033,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   name="Principal Paid"
                   dataKey="principalPaid"
                   stackId="annual"
-                  fill="#10b981"
+                  fill="#919191"
                   radius={[0, 0, 0, 0]}
                 />
                 <Bar
@@ -2049,16 +2049,16 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 data={amortisationData.schedule.filter((d) => d.year > 0)}
                 margin={{ top: 15, right: 15, left: 10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f4" vertical={false} />
                 <XAxis
                   dataKey="yearLabel"
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   interval={Math.max(0, Math.floor(loanTermYears / 8))}
                 />
                 <YAxis
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -2074,12 +2074,12 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                 />
                 <ReferenceLine
                   y={50}
-                  stroke="#6366f1"
+                  stroke="#6f6f6f"
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
                   label={{
                     value: '50% Crossover Threshold',
-                    fill: '#4f46e5',
+                    fill: '#535353',
                     fontSize: 10,
                     position: 'insideTopLeft',
                   }}
@@ -2094,7 +2094,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   name="Principal Share (%)"
                   dataKey="principalShare"
                   stackId="comp"
-                  fill="#10b981"
+                  fill="#919191"
                   radius={[0, 0, 0, 0]}
                 />
                 <Bar
@@ -2112,24 +2112,24 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
               >
                 <defs>
                   <linearGradient id="cumPrincipalGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.5} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                    <stop offset="5%" stopColor="#919191" stopOpacity={0.5} />
+                    <stop offset="95%" stopColor="#919191" stopOpacity={0.1} />
                   </linearGradient>
                   <linearGradient id="cumInterestGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.5} />
                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f4" vertical={false} />
                 <XAxis
                   dataKey="yearLabel"
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   interval={Math.max(0, Math.floor(loanTermYears / 8))}
                 />
                 <YAxis
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -2153,7 +2153,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   name="Cumulative Principal"
                   dataKey="cumulativePrincipal"
                   stackId="cum"
-                  stroke="#059669"
+                  stroke="#747474"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#cumPrincipalGrad)"
@@ -2163,7 +2163,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   name="Cumulative Interest"
                   dataKey="cumulativeInterest"
                   stackId="cum"
-                  stroke="#d97706"
+                  stroke="#848484"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#cumInterestGrad)"
@@ -2176,24 +2176,24 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
               >
                 <defs>
                   <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#7b7b7b" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#7b7b7b" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#919191" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#919191" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f4" vertical={false} />
                 <XAxis
                   dataKey="yearLabel"
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   interval={Math.max(0, Math.floor(loanTermYears / 8))}
                 />
                 <YAxis
-                  stroke="#94a3b8"
+                  stroke="#a1a1a1"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -2216,7 +2216,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   type="monotone"
                   name="Remaining Balance"
                   dataKey="remainingBalance"
-                  stroke="#2563eb"
+                  stroke="#606060"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#balanceGradient)"
@@ -2225,7 +2225,7 @@ export const LoanRepaymentCalculator: React.FC<LoanRepaymentCalculatorProps> = (
                   type="monotone"
                   name="Cumulative Equity"
                   dataKey="cumulativePrincipal"
-                  stroke="#10b981"
+                  stroke="#919191"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#equityGradient)"

@@ -286,7 +286,7 @@ export const MarketTrends: React.FC<MarketTrendsProps> = ({
         </div>
 
         {/* 3. Interactive Chart Visualizer Container */}
-        <div className="relative bg-gradient-to-br from-slate-950 via-[#0a1229] to-[#0f1d3e] text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-blue-500/20 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-slate-950 via-[#121212] to-[#1c1c1c] text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-blue-500/20 overflow-hidden">
           {/* Subtle Ambient Glow */}
           <div className="absolute top-0 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-10 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -422,8 +422,8 @@ export const MarketTrends: React.FC<MarketTrendsProps> = ({
                       <stop offset="100%" stopColor="#FFD200" stopOpacity="0.0" />
                     </linearGradient>
                     <linearGradient id="unitGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.0" />
+                      <stop offset="0%" stopColor="#afafaf" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#afafaf" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
 
@@ -483,7 +483,7 @@ export const MarketTrends: React.FC<MarketTrendsProps> = ({
                       <path
                         d={fiveYearPaths.unitLine}
                         fill="none"
-                        stroke="#22D3EE"
+                        stroke="#afafaf"
                         strokeWidth="2.5"
                         strokeLinecap="round"
                       />
@@ -517,7 +517,7 @@ export const MarketTrends: React.FC<MarketTrendsProps> = ({
                             cx={fiveYearPaths.unitPoints[i].x}
                             cy={fiveYearPaths.unitPoints[i].y}
                             r="4.5"
-                            fill="#22D3EE"
+                            fill="#afafaf"
                             stroke="#0a0a0a"
                             strokeWidth="2"
                           />
@@ -557,7 +557,7 @@ export const MarketTrends: React.FC<MarketTrendsProps> = ({
                           <text
                             x={pt.x}
                             y={chartHeight - 12}
-                            fill="#A3A3A3"
+                            fill="#a3a3a3"
                             fontSize="11"
                             fontWeight="bold"
                             textAnchor="middle"
@@ -612,7 +612,7 @@ export const MarketTrends: React.FC<MarketTrendsProps> = ({
                           <text
                             x={m.x + m.width / 2}
                             y={chartHeight - 12}
-                            fill="#A3A3A3"
+                            fill="#a3a3a3"
                             fontSize="10"
                             fontWeight="bold"
                             textAnchor="middle"

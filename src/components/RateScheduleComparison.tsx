@@ -921,26 +921,26 @@ export const RateScheduleComparison: React.FC<RateScheduleComparisonProps> = ({
               <AreaChart data={comparisonSchedule} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorBlue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#606060" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#606060" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#DC2626" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#DC2626" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#4d4d4d" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#4d4d4d" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="yearLabel" tick={{ fontSize: 11, fill: '#6B7280' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e7e7" />
+                <XAxis dataKey="yearLabel" tick={{ fontSize: 11, fill: '#727272' }} />
                 <YAxis
                   tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                  tick={{ fontSize: 11, fill: '#6B7280' }}
+                  tick={{ fontSize: 11, fill: '#727272' }}
                 />
                 <Tooltip content={<CustomCompareTooltip />} />
                 <Area
                   type="monotone"
                   dataKey="cumInterestA"
                   name={`Rate A (${rateA}%)`}
-                  stroke="#2563EB"
+                  stroke="#606060"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#colorBlue)"
@@ -949,7 +949,7 @@ export const RateScheduleComparison: React.FC<RateScheduleComparisonProps> = ({
                   type="monotone"
                   dataKey="cumInterestB"
                   name={`Rate B (${rateB}%)`}
-                  stroke="#DC2626"
+                  stroke="#4d4d4d"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#colorRed)"
@@ -957,18 +957,18 @@ export const RateScheduleComparison: React.FC<RateScheduleComparisonProps> = ({
               </AreaChart>
             ) : chartView === 'balance' ? (
               <LineChart data={comparisonSchedule} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="yearLabel" tick={{ fontSize: 11, fill: '#6B7280' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e7e7" />
+                <XAxis dataKey="yearLabel" tick={{ fontSize: 11, fill: '#727272' }} />
                 <YAxis
                   tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                  tick={{ fontSize: 11, fill: '#6B7280' }}
+                  tick={{ fontSize: 11, fill: '#727272' }}
                 />
                 <Tooltip content={<CustomCompareTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="endingBalA"
                   name={`Rate A (${rateA}%) Debt`}
-                  stroke="#2563EB"
+                  stroke="#606060"
                   strokeWidth={2.5}
                   dot={false}
                 />
@@ -976,22 +976,22 @@ export const RateScheduleComparison: React.FC<RateScheduleComparisonProps> = ({
                   type="monotone"
                   dataKey="endingBalB"
                   name={`Rate B (${rateB}%) Debt`}
-                  stroke="#DC2626"
+                  stroke="#4d4d4d"
                   strokeWidth={2.5}
                   dot={false}
                 />
               </LineChart>
             ) : (
               <BarChart data={comparisonSchedule} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="yearLabel" tick={{ fontSize: 11, fill: '#6B7280' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e7e7" />
+                <XAxis dataKey="yearLabel" tick={{ fontSize: 11, fill: '#727272' }} />
                 <YAxis
                   tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                  tick={{ fontSize: 11, fill: '#6B7280' }}
+                  tick={{ fontSize: 11, fill: '#727272' }}
                 />
                 <Tooltip content={<CustomCompareTooltip />} />
-                <Bar dataKey="interestA" name={`Rate A (${rateA}%)`} fill="#2563EB" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="interestB" name={`Rate B (${rateB}%)`} fill="#DC2626" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="interestA" name={`Rate A (${rateA}%)`} fill="#606060" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="interestB" name={`Rate B (${rateB}%)`} fill="#4d4d4d" radius={[4, 4, 0, 0]} />
               </BarChart>
             )}
           </ResponsiveContainer>

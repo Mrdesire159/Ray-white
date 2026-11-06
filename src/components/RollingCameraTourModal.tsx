@@ -324,7 +324,7 @@ export const RollingCameraTourModal: React.FC<RollingCameraTourModalProps> = ({
           </div>
 
           {/* Steadicam Rolling Frame Vignette & Lens Grain */}
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(5,5,8,0.7)_100%)]" />
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(5,5,5,0.7)_100%)]" />
 
           {/* Camera Crosshair & Level Indicator (Subtle Cinema HUD) */}
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-25">

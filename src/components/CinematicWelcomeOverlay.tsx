@@ -84,7 +84,7 @@ export const CinematicWelcomeOverlay: React.FC<CinematicWelcomeOverlayProps> = (
               <span className="inline-block bg-gradient-to-b from-white via-neutral-100 to-neutral-300 bg-clip-text text-transparent">
                 RAY WHITE
               </span>{' '}
-              <span className="inline-block bg-gradient-to-r from-[#FFE04D] via-[#FFD200] to-[#E5BC00] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(255,210,0,0.4)]">
+              <span className="inline-block bg-gradient-to-r from-[#FFE04D] via-[#FFD200] to-[#E5BC00] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(204,204,204,0.4)]">
                 REAL ESTATE
               </span>
             </h1>

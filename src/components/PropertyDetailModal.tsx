@@ -110,11 +110,11 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
     setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  const handleInquirySubmit = (e: React.FormEvent) => {
+  const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquiryName.trim() || !inquiryEmail.trim()) return;
 
-    addRequest({
+    const requestId = await addRequest({
       type: 'contact',
       priority: 'high',
       client: {
@@ -140,14 +140,14 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
       },
       assignedAgentId: property.agentId,
     });
+    if (!requestId) return;
 
     setInquirySubmitted(true);
   };
 
-  const handleRegisterInspection = (formattedTime: string) => {
-    setRegisteredInspection(formattedTime);
+  const handleRegisterInspection = async (formattedTime: string) => {
 
-    addRequest({
+    const requestId = await addRequest({
       type: 'inspection',
       priority: 'urgent',
       client: {
@@ -172,6 +172,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
       },
       assignedAgentId: property.agentId,
     });
+    if (!requestId) return;
+    setRegisteredInspection(formattedTime);
   };
 
   const handleShare = () => {
@@ -625,7 +627,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 {/* Styled Map Container */}
                 <div className="relative h-64 w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100">
                   {/* Stylized Map Canvas */}
-                  <div className="absolute inset-0 bg-[#E8EAE6] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-[#e9e9e9] flex items-center justify-center">
                     <div className="w-full h-full opacity-80 relative overflow-hidden bg-[radial-gradient(#c8d0c8_1px,transparent_1px)] [background-size:16px_16px]">
                       {/* Stylized road grid representation */}
                       <div className="absolute top-1/2 left-0 right-0 h-3 bg-white border-y border-neutral-300 transform -rotate-3" />
