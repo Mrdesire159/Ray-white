@@ -123,7 +123,10 @@ export default async (req: Request, context: Context) => {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
         return json({ error: "Enter a valid email address." }, 400);
       if (password.length < 10 || password.length > 1024)
-        return json({ error: "Use a password of at least 10 characters." }, 400);
+        return json(
+          { error: "Use a password of at least 10 characters." },
+          400,
+        );
       const localPart = email.split("@")[0];
       if (localPart.length > 2 && password.toLowerCase().includes(localPart))
         return json(
@@ -133,20 +136,33 @@ export default async (req: Request, context: Context) => {
       // Limit new accounts per network to deter automated sign-ups.
       const key = `visitor-signup:${hash(context.ip || "unknown")}`;
       const now = new Date();
-      const [attempt] = await db
-        .insert(adminAttempts)
-        .values({ key, attempts: 1, expiresAt: new Date(now.getTime() + 3600000) })
-        .onConflictDoUpdate({
-          target: adminAttempts.key,
-          set: {
-            attempts: sql`CASE WHEN ${adminAttempts.expiresAt} <= ${now} THEN 1 ELSE ${adminAttempts.attempts} + 1 END`,
-            expiresAt: sql`CASE WHEN ${adminAttempts.expiresAt} <= ${now} THEN ${new Date(now.getTime() + 3600000)} ELSE ${adminAttempts.expiresAt} END`,
-          },
-        })
-        .returning();
-      if (attempt.attempts > 6)
+      let signupAttempts = 0;
+      try {
+        const [attempt] = await db
+          .insert(adminAttempts)
+          .values({
+            key,
+            attempts: 1,
+            expiresAt: new Date(now.getTime() + 3600000),
+          })
+          .onConflictDoUpdate({
+            target: adminAttempts.key,
+            set: {
+              attempts: sql`CASE WHEN ${adminAttempts.expiresAt} <= ${now} THEN 1 ELSE ${adminAttempts.attempts} + 1 END`,
+              expiresAt: sql`CASE WHEN ${adminAttempts.expiresAt} <= ${now} THEN ${new Date(now.getTime() + 3600000)} ELSE ${adminAttempts.expiresAt} END`,
+            },
+          })
+          .returning();
+        signupAttempts = attempt?.attempts ?? 0;
+      } catch (error) {
+        // Never block a genuine visitor because the rate-limit store is unavailable.
+        console.error("visitor-signup rate limit unavailable", error);
+      }
+      if (signupAttempts > 6)
         return json(
-          { error: "Too many new accounts from this network. Try again later." },
+          {
+            error: "Too many new accounts from this network. Try again later.",
+          },
           429,
         );
       try {
@@ -158,12 +174,18 @@ export default async (req: Request, context: Context) => {
       } catch (error) {
         const duplicate =
           error instanceof AuthError &&
-          (error.status === 422 || /already|registered|exists/i.test(error.message));
-        if (!duplicate)
+          (error.status === 422 ||
+            /already|registered|exists/i.test(error.message));
+        if (!duplicate) {
+          console.error("visitor-signup createUser failed", error);
           return json(
-            { error: "Account creation is unavailable. Please try again shortly." },
+            {
+              error:
+                "Account creation is unavailable. Please try again shortly.",
+            },
             503,
           );
+        }
         // The email is already registered: sign in if the password matches.
         try {
           await login(email, password);
@@ -183,7 +205,10 @@ export default async (req: Request, context: Context) => {
         await login(email, password);
       } catch {
         return json(
-          { error: "Your account was created. Please sign in to continue.", code: "created" },
+          {
+            error: "Your account was created. Please sign in to continue.",
+            code: "created",
+          },
           503,
         );
       }
@@ -610,7 +635,8 @@ export default async (req: Request, context: Context) => {
       return json({ ok: true });
     }
     return json({ error: "Unknown action." }, 400);
-  } catch {
+  } catch (error) {
+    console.error("portal function error", error);
     return json(
       { error: "Unable to connect to the message service. Please try again." },
       503,
