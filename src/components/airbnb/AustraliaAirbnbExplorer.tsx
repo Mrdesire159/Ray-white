@@ -18,6 +18,7 @@ import { AIRBNB_STAYS, AUSTRALIA_REGIONS } from '../../data/airbnbStays';
 import { AirbnbStay } from '../../types/airbnb';
 import { AustraliaMapPricePins } from './AustraliaMapPricePins';
 import { AirbnbStayModal } from './AirbnbStayModal';
+import { AirbnbPhotoRoll } from './AirbnbPhotoRoll';
 
 interface AustraliaAirbnbExplorerProps {
   onOpenInbox?: () => void;
@@ -107,7 +108,7 @@ export const AustraliaAirbnbExplorer: React.FC<AustraliaAirbnbExplorerProps> = (
                 Australian Airbnb Collection
               </h1>
               <p className="text-sm sm:text-base text-neutral-400 max-w-2xl mt-1 leading-relaxed">
-                Handpicked luxury villas, beachfront retreats, and vineyard homesteads across Australia's most sought-after destinations, tagged with verified nightly rates.
+                Handpicked luxury villas, beachfront retreats, and vineyard homesteads across Australia's most sought-after destinations, with nightly prices shown clearly.
               </p>
             </div>
 
@@ -132,8 +133,10 @@ export const AustraliaAirbnbExplorer: React.FC<AustraliaAirbnbExplorerProps> = (
         </div>
       </section>
 
+      <AirbnbPhotoRoll />
+
       {/* 2. Interactive Australia Map with Live Price Tags */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <AustraliaMapPricePins
           stays={AIRBNB_STAYS}
           selectedStayId={selectedStay?.id}

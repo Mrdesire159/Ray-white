@@ -217,11 +217,7 @@ Client Notes: ${clientNote.trim() || 'No special requests.'}`;
               <div className="lg:col-span-7 space-y-6">
                 {/* Host Profile */}
                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-neutral-50 border border-neutral-200/90">
-                  <img
-                    src={stay.host.avatar}
-                    alt={stay.host.name}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-[#FFD200] shadow-sm"
-                  />
+                  <div className="w-14 h-14 rounded-full bg-neutral-900 text-[#FFD200] flex items-center justify-center" aria-hidden="true"><Users className="w-6 h-6" /></div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="text-sm font-black text-neutral-900 truncate">
