@@ -59,7 +59,7 @@ export interface AuditLogEntry {
 export interface RequestReply {
   direction?: 'staff' | 'visitor';
   id: string;
-  senderEmail: string; // e.g. "contact@raywhiterealestate.com"
+  senderEmail: string; // e.g. "contact@raywhiterealestate.live"
   senderName: string; // e.g. "Ray White Concierge"
   recipientEmail: string;
   recipientName?: string;
@@ -78,7 +78,7 @@ export interface AdminRequest {
   client: ClientInfo;
 
   // Custom routing
-  targetEmail?: string; // defaults to 'contact@raywhiterealestate.com'
+  targetEmail?: string; // defaults to 'contact@raywhiterealestate.live'
   replies?: RequestReply[];
 
   // Associated property (if applicable)

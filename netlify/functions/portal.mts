@@ -478,7 +478,7 @@ export default async (req: Request, context: Context) => {
           if (!message) throw new Error("empty-message");
           const reply: RequestReply = {
             id: crypto.randomUUID(),
-            senderEmail: "contact@raywhiterealestate.com",
+            senderEmail: "contact@raywhiterealestate.live",
             senderName: "Ray White Team",
             recipientEmail: email,
             recipientName: name,
@@ -513,10 +513,10 @@ export default async (req: Request, context: Context) => {
         senderName: isAdmin
           ? "Ray White Team"
           : user!.name || row.data.client.name,
-        senderEmail: isAdmin ? "contact@raywhiterealestate.com" : user!.email!,
+        senderEmail: isAdmin ? "contact@raywhiterealestate.live" : user!.email!,
         recipientEmail: isAdmin
           ? row.recipientEmail
-          : "contact@raywhiterealestate.com",
+          : "contact@raywhiterealestate.live",
         recipientName: isAdmin ? row.data.client.name : "Ray White Team",
         subject: row.data.details.subject,
         message,

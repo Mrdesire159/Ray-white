@@ -336,7 +336,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     latestVisitorNotification,
     dismissVisitorNotification: useCallback(() => setNotification(null), []),
-    targetCustomEmail: "contact@raywhiterealestate.com",
+    targetCustomEmail: "contact@raywhiterealestate.live",
     totalVolumeEstimate: requests.reduce(
       (s, r) =>
         s +

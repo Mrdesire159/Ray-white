@@ -279,6 +279,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 <p className="text-xs text-neutral-400 font-medium">
                   Australasia Prestige Inquiries, Appraisals &amp; VIP Tour Approvals
                 </p>
+                <p className="text-[11px] text-neutral-500 font-mono mt-0.5">
+                  All site messages to contact@raywhiterealestate.live arrive here for reply
+                </p>
               </div>
             </div>
 

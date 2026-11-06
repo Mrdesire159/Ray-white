@@ -204,7 +204,7 @@ export const ReplyPortal: React.FC<ReplyPortalProps> = ({
               <div className="flex items-center gap-3">
                 <Inbox size={18} className="text-[#FFD200]" />
                 <span className="font-semibold text-sm">
-                  {admin ? "Enquiry inbox" : visitor?.email}
+                  {admin ? "Inbox · contact@raywhiterealestate.live" : visitor?.email}
                 </span>
                 {visitorUnreadReplyCount > 0 && (
                   <span className="text-xs bg-[#FFD200] text-neutral-900 px-2 py-0.5 rounded-full">
