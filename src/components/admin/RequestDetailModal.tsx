@@ -31,6 +31,7 @@ interface RequestDetailModalProps {
   onClose: () => void;
   onOpenApprove: (request: AdminRequest) => void;
   onOpenDecline: (request: AdminRequest) => void;
+  onOpenReply?: (request: AdminRequest) => void;
   onComplete: (id: string, note?: string) => void;
   onAssignAgent: (requestId: string, agentId: string) => void;
   onUpdatePriority: (requestId: string, priority: RequestPriority) => void;
@@ -44,6 +45,7 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   onClose,
   onOpenApprove,
   onOpenDecline,
+  onOpenReply,
   onComplete,
   onAssignAgent,
   onUpdatePriority,
@@ -577,6 +579,20 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           </button>
 
           <div className="flex items-center gap-2.5">
+            {onOpenReply && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenReply(request);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border border-blue-500 active:scale-95"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Reply to Client ({request.replies?.length || 0})</span>
+              </button>
+            )}
+
             {request.status !== 'completed' && (
               <button
                 type="button"

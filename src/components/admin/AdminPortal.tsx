@@ -29,6 +29,7 @@ import {
   ExternalLink,
   Lock,
   Camera,
+  MessageSquare,
 } from 'lucide-react';
 import { useRequests } from '../../context/RequestContext';
 import { AdminRequest, RequestPriority, RequestStatus, RequestType } from '../../types/request';
@@ -36,6 +37,7 @@ import { ApproveModal } from './ApproveModal';
 import { DeclineModal } from './DeclineModal';
 import { RequestDetailModal } from './RequestDetailModal';
 import { CreateRequestModal } from './CreateRequestModal';
+import { AdminReplyModal } from './AdminReplyModal';
 import { AGENTS } from '../../data/agents';
 
 interface AdminPortalProps {
@@ -69,13 +71,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     bulkApprove,
     bulkDecline,
     addRequest,
+    sendReply,
     logoutAdmin,
   } = useRequests();
 
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<'all' | RequestType>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | RequestStatus>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'unreplied' | RequestStatus>('all');
   const [selectedPriority, setSelectedPriority] = useState<'all' | RequestPriority>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'priority' | 'highest_value'>('newest');
 
@@ -86,6 +89,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [selectedRequestForDetail, setSelectedRequestForDetail] = useState<AdminRequest | null>(null);
   const [selectedRequestForApprove, setSelectedRequestForApprove] = useState<AdminRequest | null>(null);
   const [selectedRequestForDecline, setSelectedRequestForDecline] = useState<AdminRequest | null>(null);
+  const [selectedRequestForReply, setSelectedRequestForReply] = useState<AdminRequest | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Filtered & Sorted Requests
@@ -105,8 +109,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         // Type Filter
         if (selectedType !== 'all' && req.type !== selectedType) return false;
 
-        // Status Filter
-        if (selectedStatus !== 'all' && req.status !== selectedStatus) return false;
+        // Status & Unreplied Filter
+        if (selectedStatus === 'unreplied') {
+          const hasStaffReply = req.replies?.some((m) => m.direction === 'staff');
+          if (hasStaffReply) return false;
+        } else if (selectedStatus !== 'all' && req.status !== selectedStatus) {
+          return false;
+        }
 
         // Priority Filter
         if (selectedPriority !== 'all' && req.priority !== selectedPriority) return false;
@@ -264,8 +273,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-[#FFD200] text-neutral-950 flex items-center justify-center font-black text-sm shadow-md">
-                RW
+              <div className="relative shrink-0">
+                <img
+                  src="/site-profile.webp"
+                  alt="Ray White Site Profile"
+                  className="w-10 h-10 rounded-xl object-cover border-2 border-[#FFD200] shadow-md"
+                />
+                <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#FFD200] text-neutral-950 font-black text-[8px] flex items-center justify-center border border-neutral-950 shadow-xs">
+                  RW
+                </span>
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -414,6 +430,37 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         </div>
       </div>
 
+      {/* Central Inbound Direct Channel & Fast Reply Hub Banner */}
+      <div className="bg-gradient-to-r from-blue-950 via-neutral-900 to-neutral-950 border-b border-blue-900/50 text-white py-3 px-4 sm:px-6 lg:px-8 shadow-inner">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-600/30 text-[#FFD200] border border-blue-500/30 flex items-center justify-center shrink-0">
+              <Mail className="w-4 h-4 text-[#FFD200]" />
+            </div>
+            <div>
+              <span className="font-extrabold text-white">Central Inbound Routing Active: </span>
+              <span className="text-neutral-300">
+                All website enquiries, appraisals, inspections, and direct messages route directly to this Admin Portal (dispatched via <strong className="text-white font-mono">{targetCustomEmail}</strong>) for fastest reply.
+              </span>
+            </div>
+          </div>
+          {unrepliedCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setSelectedStatus('unreplied')}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer active:scale-95 animate-pulse"
+            >
+              <span>{unrepliedCount} Unanswered Message{unrepliedCount === 1 ? '' : 's'}</span>
+              <span>→ Filter Now</span>
+            </button>
+          ) : (
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/30 shrink-0">
+              ✓ All Messages Replied
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Main Workspace Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         {/* Navigation Tabs (Request Categories) */}
@@ -522,6 +569,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               {(
                 [
                   { id: 'all', label: 'All Status' },
+                  { id: 'unreplied', label: `⚡ Unreplied (${unrepliedCount})` },
                   { id: 'pending', label: 'Pending ⏳' },
                   { id: 'approved', label: 'Approved ✅' },
                   { id: 'declined', label: 'Declined ❌' },
@@ -533,7 +581,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   onClick={() => setSelectedStatus(st.id)}
                   className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                     selectedStatus === st.id
-                      ? 'bg-neutral-900 text-white font-extrabold'
+                      ? st.id === 'unreplied'
+                        ? 'bg-rose-600 text-white font-black shadow-xs ring-2 ring-rose-500/30'
+                        : 'bg-neutral-900 text-white font-extrabold'
+                      : st.id === 'unreplied' && unrepliedCount > 0
+                      ? 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 font-extrabold'
                       : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                   }`}
                 >
@@ -681,6 +733,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         {req.type}
                       </span>
                       {getPriorityBadge(req.priority)}
+                      {!req.replies?.some((m) => m.direction === 'staff') ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-300 animate-pulse">
+                          <Mail className="w-3 h-3 text-rose-600" />
+                          Needs Reply
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          <MessageSquare className="w-3 h-3 text-blue-600" />
+                          {req.replies.length} Msg
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -797,8 +860,23 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       <div className="flex items-center gap-1.5 pt-2">
                         <button
                           type="button"
+                          onClick={() => setSelectedRequestForReply(req)}
+                          className="flex-1 py-1.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs border border-blue-500"
+                          title="Reply to message directly from Admin Portal"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Reply</span>
+                          {req.replies && req.replies.length > 0 && (
+                            <span className="w-4 h-4 rounded-full bg-blue-800 text-white text-[10px] flex items-center justify-center font-bold">
+                              {req.replies.length}
+                            </span>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
                           onClick={() => setSelectedRequestForDetail(req)}
-                          className="flex-1 py-1.5 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl text-xs font-bold transition-colors cursor-pointer text-center"
+                          className="py-1.5 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl text-xs font-bold transition-colors cursor-pointer text-center"
                         >
                           Details
                         </button>
@@ -865,6 +943,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         onClose={() => setSelectedRequestForDetail(null)}
         onOpenApprove={(req) => setSelectedRequestForApprove(req)}
         onOpenDecline={(req) => setSelectedRequestForDecline(req)}
+        onOpenReply={(req) => setSelectedRequestForReply(req)}
         onComplete={(id, note) => completeRequest(id, note)}
         onAssignAgent={(id, agentId) => assignAgent(id, agentId)}
         onUpdatePriority={(id, pri) => updatePriority(id, pri)}
@@ -876,6 +955,38 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreate={(data) => addRequest(data)}
+      />
+
+      {/* Direct In-Portal Reply Modal */}
+      <AdminReplyModal
+        request={selectedRequestForReply}
+        isOpen={!!selectedRequestForReply}
+        onClose={() => setSelectedRequestForReply(null)}
+        onSendReply={async (id, message, options) => {
+          const ok = await sendReply(id, message, options);
+          if (ok && selectedRequestForReply) {
+            setSelectedRequestForReply((prev) => {
+              if (!prev) return null;
+              const newReply = {
+                id: `rep-${Date.now()}`,
+                direction: 'staff' as const,
+                senderEmail: options?.senderEmail || targetCustomEmail,
+                senderName: options?.senderName || 'Ray White Executive Team',
+                recipientEmail: prev.client.email,
+                recipientName: prev.client.name,
+                subject: options?.subject || `Re: ${prev.details.subject || prev.propertyAddress || 'Your Ray White Inquiry'}`,
+                message,
+                sentAt: new Date().toISOString(),
+              };
+              return {
+                ...prev,
+                replies: [...(prev.replies || []), newReply],
+              };
+            });
+          }
+          return ok;
+        }}
+        targetCustomEmail={targetCustomEmail}
       />
     </div>
   );

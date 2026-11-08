@@ -12,6 +12,7 @@ interface HeaderProps {
   compareCount?: number;
   onOpenCompare?: () => void;
   onOpenChat?: () => void;
+  onOpenAdmin?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,9 +24,38 @@ export const Header: React.FC<HeaderProps> = ({
   compareCount = 0,
   onOpenCompare,
   onOpenChat,
+  onOpenAdmin,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [rwTapCount, setRwTapCount] = useState(0);
+  const [adminHint, setAdminHint] = useState<string | null>(null);
+  const rwTapTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const { visitor, openAccount, pendingCount, isAdminAuthenticated, unrepliedCount, visitorUnreadReplyCount, targetCustomEmail } = useRequests();
+
+  const handleRwTap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (rwTapTimerRef.current) {
+      clearTimeout(rwTapTimerRef.current);
+    }
+    const nextCount = rwTapCount + 1;
+    if (nextCount >= 3) {
+      setRwTapCount(0);
+      setAdminHint('Staff Admin Activated! Opening Portal...');
+      setTimeout(() => setAdminHint(null), 2500);
+      if (onOpenAdmin) {
+        onOpenAdmin();
+      } else if (isAdminAuthenticated) {
+        onNavigate('admin');
+      }
+    } else {
+      setRwTapCount(nextCount);
+      setAdminHint(`Admin mode: tap ${3 - nextCount} more time${3 - nextCount === 1 ? '' : 's'}...`);
+      rwTapTimerRef.current = setTimeout(() => {
+        setRwTapCount(0);
+        setAdminHint(null);
+      }, 1500);
+    }
+  };
 
   const navItems = [
     { id: 'home', label: 'Home' },
@@ -48,26 +78,66 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between h-15 sm:h-20 gap-2 sm:gap-6 lg:gap-8">
           {/* Brand Zone */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <button
-              onClick={() => handleNavClick('home')}
-              className="flex items-center gap-2 text-left group cursor-pointer focus:outline-none"
-              aria-label="Ray White Home"
-            >
-              {/* Ray White Brand Mark */}
-              <div className="flex items-center">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#FFD200] flex items-center justify-center font-bold text-neutral-900 text-lg sm:text-xl tracking-tighter rounded-sm shadow-xs group-hover:bg-[#E5BC00] transition-colors">
+            <div className="flex items-center gap-2 text-left group">
+              {/* Ray White Brand Mark - Tap 3 times for Admin Portal */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={handleRwTap}
+                  className={`w-8 h-8 sm:w-9 sm:h-9 bg-[#FFD200] flex items-center justify-center font-bold text-neutral-900 text-lg sm:text-xl tracking-tighter rounded-sm shadow-xs hover:bg-[#E5BC00] transition-all cursor-pointer select-none active:scale-95 ${
+                    rwTapCount === 1
+                      ? 'ring-2 ring-amber-400 scale-105'
+                      : rwTapCount === 2
+                      ? 'ring-4 ring-amber-500 scale-110 animate-pulse bg-amber-400'
+                      : ''
+                  }`}
+                  title="Ray White (Tap 3 times for Admin Portal)"
+                  aria-label="Ray White logo mark (Tap 3 times for Admin Portal)"
+                >
                   RW
-                </div>
-                <div className="ml-2 sm:ml-2.5 flex flex-col">
-                  <span className="text-lg sm:text-xl font-extrabold tracking-tight text-neutral-900 leading-none">
-                    Ray White<span className="text-[#FFD200]">.</span>
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mt-0.5">
-                    Real Estate
-                  </span>
-                </div>
+                </button>
+                {adminHint && (
+                  <div className="absolute top-full left-0 mt-2 z-50 whitespace-nowrap bg-neutral-950 text-[#FFD200] text-[10px] font-black px-2.5 py-1 rounded-lg border border-amber-400/40 shadow-xl animate-in fade-in slide-in-from-top-1 pointer-events-none">
+                    {adminHint}
+                  </div>
+                )}
               </div>
-            </button>
+
+              {/* Site Profile Picture & Google Verified Display Photo */}
+              <div
+                onClick={() => handleNavClick('home')}
+                className="relative shrink-0 cursor-pointer group/avatar"
+                title="Ray White Real Estate – Official Profile Picture (Google Verified)"
+                aria-label="Ray White Profile Picture"
+              >
+                <img
+                  src="/site-profile.webp"
+                  alt="Ray White Real Estate Profile Picture"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-[#FFD200] shadow-xs group-hover/avatar:scale-105 transition-transform ring-1 ring-neutral-200"
+                />
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center text-[7px] text-white font-black shadow-xs"
+                  title="Google Verified Real Estate Agency Profile"
+                >
+                  ✓
+                </span>
+              </div>
+
+              {/* Brand Text - Normal Navigation Home */}
+              <button
+                type="button"
+                onClick={() => handleNavClick('home')}
+                className="ml-0.5 sm:ml-1 flex flex-col text-left cursor-pointer focus:outline-none"
+                aria-label="Ray White Home"
+              >
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight text-neutral-900 leading-none group-hover:text-neutral-950">
+                  Ray White<span className="text-[#FFD200]">.</span>
+                </span>
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mt-0.5">
+                  Real Estate
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Navigation Links */}

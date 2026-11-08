@@ -327,6 +327,13 @@ export default function App() {
         compareCount={comparedPropertyIds.length}
         onOpenCompare={() => setIsCompareModalOpen(true)}
         onOpenChat={() => setIsChatOpen(true)}
+        onOpenAdmin={() => {
+          if (isAdminAuthenticated) {
+            handleNavigate('admin');
+          } else {
+            setIsAdminPasswordModalOpen(true);
+          }
+        }}
       />
 
       {/* Main Content Area */}

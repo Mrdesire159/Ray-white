@@ -102,7 +102,12 @@ export const Hero: React.FC<HeroProps> = ({ onSearch }) => {
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20 w-full text-center">
         {/* Hero Kicker & Headlines */}
         <div className="max-w-3xl mx-auto mb-8 sm:mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-bold tracking-widest text-[#FFD200] mb-4 border border-white/15 uppercase">
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-xs font-bold tracking-widest text-[#FFD200] mb-4 border border-white/15 uppercase">
+            <img
+              src="/site-profile.webp"
+              alt="Ray White Profile Picture"
+              className="w-5 h-5 rounded-full object-cover border border-[#FFD200]/80 shadow-xs"
+            />
             <span>Australasia’s Premier Real Estate Network · Est. 1902</span>
           </div>
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white text-balance leading-tight uppercase">

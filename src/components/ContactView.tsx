@@ -69,8 +69,18 @@ export const ContactView: React.FC<ContactViewProps> = ({ onOpenReplyPortal }) =
       {/* Official Custom Email Direct Routing Banner */}
       <div className="mb-10 p-6 rounded-3xl bg-gradient-to-r from-neutral-950 via-blue-950 to-neutral-950 text-white border border-blue-900/60 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600/20 text-[#FFD200] border border-blue-500/30 flex items-center justify-center shrink-0 shadow-lg">
-            <Mail className="w-7 h-7 text-[#FFD200]" />
+          <div className="relative shrink-0">
+            <img
+              src="/site-profile.webp"
+              alt="Ray White Real Estate Site Profile"
+              className="w-14 h-14 rounded-2xl object-cover border-2 border-[#FFD200] shadow-lg"
+            />
+            <span
+              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black border-2 border-neutral-950 shadow-xs"
+              title="Google Verified Profile"
+            >
+              ✓
+            </span>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">

@@ -1,0 +1,20 @@
+{
+  "name": "Ray White Real Estate",
+  "short_name": "Ray White",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FFD200",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/site-profile-square.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
