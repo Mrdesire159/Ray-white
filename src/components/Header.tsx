@@ -62,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'buy', label: 'Buy', tab: 'sale' as const },
     { id: 'rent', label: 'Rent', tab: 'rent' as const },
     { id: 'airbnb', label: 'Airbnb & Stays', badge: 'AU' },
+    { id: 'testimonials', label: 'Testimonials' },
     { id: 'trends', label: 'Market Trends' },
     { id: 'pricelist', label: 'Price List' },
     { id: 'agents', label: 'Agents' },

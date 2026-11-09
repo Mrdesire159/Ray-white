@@ -33,6 +33,7 @@ import { AdminPortal } from './components/admin/AdminPortal';
 import { AdminPasswordGate } from './components/admin/AdminPasswordGate';
 import { AdminPasswordModal } from './components/admin/AdminPasswordModal';
 import { PropertyMapClustered } from './components/PropertyMapClustered';
+import { AustralianTestimonials } from './components/AustralianTestimonials';
 import { useTheme } from './context/ThemeContext';
 import { useRequests } from './context/RequestContext';
 import { usePrice } from './context/PriceContext';
@@ -74,7 +75,7 @@ export default function App() {
   const { syncedProperties } = usePrice();
   const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<
-    'home' | 'listings' | 'pricelist' | 'book' | 'rollingball' | 'trends' | 'videos' | 'sell' | 'agents' | 'contact' | 'admin' | 'villatour' | 'replyportal' | 'airbnb'
+    'home' | 'listings' | 'pricelist' | 'book' | 'rollingball' | 'trends' | 'videos' | 'sell' | 'agents' | 'contact' | 'admin' | 'villatour' | 'replyportal' | 'airbnb' | 'testimonials'
   >(() => window.location.pathname.replace(/\/$/, '') === '/admin' ? 'admin' : 'home');
   const [heroMode, setHeroMode] = useState<'cinematic' | 'rollingball'>('cinematic');
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -226,7 +227,8 @@ export default function App() {
       view === 'agents' ||
       view === 'contact' ||
       view === 'replyportal' ||
-      view === 'airbnb'
+      view === 'airbnb' ||
+      view === 'testimonials'
     ) {
       setCurrentView(view as any);
     } else {
@@ -576,6 +578,14 @@ export default function App() {
               </div>
             </section>
 
+            {/* 4.9. Australian Client Testimonials Across Australia */}
+            <AustralianTestimonials
+              isCompactSection={true}
+              onOpenAppraisal={() => setIsAppraisalOpen(true)}
+              onNavigateToAgents={() => handleNavigate('agents')}
+              onNavigateToStays={() => handleNavigate('airbnb')}
+            />
+
             {/* 5. Minimalist Advisory Callout Banner (Clean & Uncluttered) */}
             <section className="bg-neutral-900 py-12 text-white">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -904,6 +914,15 @@ export default function App() {
         {/* VIEW: AIRBNB & HOLIDAY STAYS ACROSS AUSTRALIA */}
         {currentView === 'airbnb' && (
           <AustraliaAirbnbExplorer onOpenInbox={() => handleNavigate('replyportal')} />
+        )}
+
+        {/* VIEW: AUSTRALIAN CLIENT TESTIMONIALS */}
+        {currentView === 'testimonials' && (
+          <AustralianTestimonials
+            onOpenAppraisal={() => setIsAppraisalOpen(true)}
+            onNavigateToAgents={() => handleNavigate('agents')}
+            onNavigateToStays={() => handleNavigate('airbnb')}
+          />
         )}
 
         {/* VIEW: PRIVATE ADMIN PORTAL */}

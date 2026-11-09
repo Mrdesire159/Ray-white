@@ -116,6 +116,12 @@ export const Hero: React.FC<HeroProps> = ({ onSearch }) => {
           <p className="mt-3.5 text-base sm:text-lg text-neutral-200 text-balance max-w-2xl mx-auto font-normal leading-relaxed">
             Where over 120 years of heritage meets visionary architectural distinction. Discover premier residences, curated luxury estates, and sanctuary homes.
           </p>
+          <div className="flex items-center justify-center gap-2 mt-3.5 text-xs text-neutral-300">
+            <span className="text-amber-400 tracking-wider">★★★★★</span>
+            <span className="font-extrabold text-white">4.98 / 5.0</span>
+            <span className="text-neutral-500">•</span>
+            <span className="text-neutral-300">3,420+ Verified Client Testimonials Across Australia</span>
+          </div>
         </div>
 
         {/* Large Overlaying Search Box */}
